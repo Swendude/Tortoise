@@ -225,6 +225,11 @@ problemToText problem =
 -- VIEW
 
 
+htmlclass : String -> Html.Attribute msg
+htmlclass =
+    Html.Attributes.class
+
+
 view : Model -> Html Msg
 view model =
     let
@@ -238,13 +243,19 @@ view model =
                         [ Html.h5 [] (List.append [ Html.text "Errors: " ] (problemToHtml val.problem))
                         ]
     in
-    div []
-        [ div []
-            [ h1 []
-                [ Html.text "Hello" ]
+    div [ htmlclass "container" ]
+        [ div [ htmlclass "row" ]
+            [ div [ htmlclass "col s12" ]
+                [ h4 [ htmlclass "center-align" ]
+                    [ Html.text "Tortoise" ]
+                ]
+            , div [ htmlclass "col s12" ]
+                [ p [ htmlclass "center-align" ]
+                    [ Html.text "LOGO in the browser" ]
+                ]
             ]
-        , div []
-            [ div []
+        , div [ htmlclass "row" ]
+            [ div [ htmlclass "center-align" ]
                 [ svg
                     [ Svg.Attributes.width (toString model.windowSize.x)
                     , Svg.Attributes.height (toString model.windowSize.y)
@@ -259,7 +270,11 @@ view model =
                     ]
                 ]
             ]
-        , Html.textarea [ rows 10, onInput Change ] []
+        , div [ htmlclass "row" ]
+            [ div [ htmlclass "input-field col s12" ]
+                [ Html.textarea [ htmlclass "materialize-textarea", onInput Change ] []
+                ]
+            ]
         , Html.button [ Html.Events.onClick Eval ]
             [ Html.text "eval" ]
         , output

@@ -1,7 +1,7 @@
 'use strict';
 
-require('../node_modules/materialize-css/dist/css/materialize.css');
-// require('../node_modules/materialize-css/dist/fonts/Roboto/');
+require('../node_modules/materialize-css/dist/css/materialize.min.css');
+require('../node_modules/materialize-css/dist/js/materialize.min.js')
 
 // Require index.html so it gets copied to dist
 require('./index.html');
