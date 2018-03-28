@@ -1,18 +1,16 @@
 module Main exposing (..)
 
-import Debug exposing (log)
-import Dict exposing (get)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick, onInput)
 import List exposing (append, head, length, map, tail, take)
-import Maybe exposing (withDefault)
 import Parser exposing ((|.), (|=), Parser, ignore, int, keyword, oneOf, oneOrMore, repeat, succeed, symbol, zeroOrMore)
 import String exposing (join, split)
 import Svg exposing (..)
 import Svg.Attributes exposing (..)
 
 
+main : Program Never Model Msg
 main =
     Html.program { init = init, view = view, update = update, subscriptions = subscription }
 
@@ -81,7 +79,7 @@ update msg model =
             ( { model | position = takeSteps n model.heading model.position, line = model.position :: model.line }, Cmd.none )
 
         Change inputString ->
-            ( { model | input = Parser.run tortoiseParser (String.toUpper (ignoreLast inputString)) }, Cmd.none )
+            ( { model | input = Parser.run tortoiseParser inputString }, Cmd.none )
 
         Eval ->
             ( model, Cmd.none )
@@ -110,13 +108,8 @@ newLine =
 
 tortoiseParser : Parser (List Token)
 tortoiseParser =
-    succeed (::)
-        |= move
-        |= repeat zeroOrMore
-            (succeed identity
-                |. newLine
-                |= move
-            )
+    succeed Basics.identity
+        |= repeat oneOrMore move
 
 
 move : Parser Token
@@ -126,6 +119,7 @@ move =
         , leftParser
         , rightParser
         ]
+        |. newLine
 
 
 forwardParser : Parser Token
