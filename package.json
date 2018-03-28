@@ -1,7 +1,7 @@
 {
-  "name": "tortoise",
+  "name": "Tortoise",
   "version": "1.0.0",
-  "description": "",
+  "description": "This is a (silly) attempt to create a programming language and envirnoment that's designed to enable constructionist teaching.",
   "main": "webpack.config.js",
   "dependencies": {
     "css-loader": "^0.28.11",
@@ -20,6 +20,6 @@
     "build": "webpack --display=minimal --mode=production",
     "client": "webpack-dev-server --port 3000 --mode=development"
   },
-  "author": "",
-  "license": "ISC"
+  "author": "Swen Mulderij",
+  "license": "MIT"
 }
