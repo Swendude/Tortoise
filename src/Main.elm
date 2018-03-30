@@ -4,10 +4,11 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick, onInput)
 import List exposing (append, head, length, map, tail, take)
-import Parser exposing ((|.), (|=), Parser, ignore, int, keyword, oneOf, oneOrMore, repeat, succeed, symbol, zeroOrMore)
+import Parser exposing (Error)
 import String exposing (join, split)
 import Svg exposing (..)
 import Svg.Attributes exposing (..)
+import TortoiseParser exposing (..)
 
 
 main : Program Never Model Msg
@@ -28,13 +29,14 @@ type alias Model =
     , position : Vector
     , line : List Vector
     , windowSize : Vector
-    , input : Result Parser.Error (List Token)
+    , input : String
+    , output : Maybe (Result Parser.Error (List Token))
     }
 
 
 init : ( Model, Cmd msg )
 init =
-    ( Model 0 { x = 0, y = 0 } [] { x = 500, y = 400 } (Result.Ok []), Cmd.none )
+    ( Model 0 { x = 0, y = 0 } [] { x = 500, y = 400 } "" Nothing, Cmd.none )
 
 
 
@@ -79,140 +81,14 @@ update msg model =
             ( { model | position = takeSteps n model.heading model.position, line = model.position :: model.line }, Cmd.none )
 
         Change inputString ->
-            ( { model | input = Parser.run tortoiseParser inputString }, Cmd.none )
+            ( { model | input = inputString }, Cmd.none )
 
         Eval ->
-            ( model, Cmd.none )
-
-
-
---( { model | output = Parser.run tortoiseParser (String.toUpper model.input) }, Cmd.none )
--- INTERPRETER
-
-
-type Token
-    = FORWARD Int
-    | LEFT Int
-    | RIGHT Int
-
-
-space : Parser ()
-space =
-    ignore (Parser.Exactly 1) ((==) ' ')
-
-
-newLine : Parser ()
-newLine =
-    ignore (Parser.Exactly 1) ((==) '\n')
-
-
-tortoiseParser : Parser (List Token)
-tortoiseParser =
-    succeed Basics.identity
-        |= repeat oneOrMore move
-
-
-move : Parser Token
-move =
-    oneOf
-        [ forwardParser
-        , leftParser
-        , rightParser
-        ]
-        |. newLine
-
-
-forwardParser : Parser Token
-forwardParser =
-    succeed FORWARD
-        |. keyword "FORWARD"
-        |. space
-        |= int
-
-
-leftParser : Parser Token
-leftParser =
-    succeed LEFT
-        |. keyword "LEFT"
-        |. space
-        |= int
-
-
-rightParser : Parser Token
-rightParser =
-    succeed RIGHT
-        |. keyword "RIGHT"
-        |. Parser.symbol " "
-        |= int
-
-
-
--- DEBUG
-
-
-printTokens : List Token -> String
-printTokens =
-    List.map tokenToText >> join ","
-
-
-tokenToText : Token -> String
-tokenToText token =
-    case token of
-        FORWARD n ->
-            "FORWARD " ++ toString n
-
-        LEFT n ->
-            "LEFT " ++ toString n
-
-        RIGHT n ->
-            "RIGHT " ++ toString n
-
-
-
-{- Should probably return list of strings -}
-
-
-problemToHtml : Parser.Problem -> List (Html Msg)
-problemToHtml problem =
-    let
-        problems =
-            problemToText problem
-    in
-    List.map (\prob -> Html.p [] [ Html.text prob ]) problems
-
-
-problemToText : Parser.Problem -> List String
-problemToText problem =
-    case problem of
-        Parser.BadOneOf problems ->
-            List.concat (List.map problemToText problems)
-
-        Parser.BadInt ->
-            [ "Bad Integer" ]
-
-        Parser.BadFloat ->
-            [ "Bad Float" ]
-
-        Parser.BadRepeat ->
-            [ "Bad Repeat" ]
-
-        Parser.ExpectingEnd ->
-            [ "Expecting End" ]
-
-        Parser.ExpectingSymbol symbol ->
-            [ "Expecting Symbol '" ++ symbol ++ "'" ]
-
-        Parser.ExpectingKeyword keyword ->
-            [ "Expecting Keyword '" ++ keyword ++ "'" ]
-
-        Parser.ExpectingVariable ->
-            [ "Expecting Variable" ]
-
-        Parser.ExpectingClosing closing ->
-            [ "Expecting Closing" ]
-
-        Parser.Fail fail ->
-            [ "Fail '" ++ fail ++ "'" ]
+            let
+                upercaseInput =
+                    String.toUpper model.input
+            in
+            ( { model | input = upercaseInput, output = Just (Parser.run tortoiseParser upercaseInput) }, Cmd.none )
 
 
 
@@ -228,13 +104,22 @@ view : Model -> Html Msg
 view model =
     let
         output =
-            case model.input of
-                Ok val ->
-                    Html.p [] [ Html.text (printTokens val) ]
-
-                Err val ->
+            case model.output of
+                Just (Ok val) ->
                     Html.div []
-                        [ Html.h5 [] (List.append [ Html.text "Errors: " ] (problemToHtml val.problem))
+                        (Html.h5 [] [ Html.text "Succes!: " ]
+                            :: List.map (\tokenstring -> Html.p [ htmlclass "green-text text-darken-2" ] [ Html.text tokenstring ]) (printTokens val)
+                        )
+
+                Just (Err val) ->
+                    Html.div []
+                        (Html.h5 [] [ Html.text "Errors: " ]
+                            :: List.map (\problemstring -> Html.p [ htmlclass "red-text text-darken-2" ] [ Html.text problemstring ]) (printProblems val.problem)
+                        )
+
+                Nothing ->
+                    Html.div []
+                        [ Html.p [] [ Html.text "Welcome to Tortoise. Eval some code to begin!" ]
                         ]
     in
     div [ htmlclass "container" ]
@@ -266,10 +151,10 @@ view model =
             ]
         , div [ htmlclass "row" ]
             [ div [ htmlclass "input-field col s12" ]
-                [ Html.textarea [ htmlclass "materialize-textarea", onInput Change ] []
+                [ Html.textarea [ htmlclass "materialize-textarea", onInput Change, Html.Attributes.value model.input ] []
                 ]
             ]
-        , Html.button [ Html.Events.onClick Eval ]
+        , Html.button [ htmlclass "btn waves-effect waves-light", Html.Events.onClick Eval ]
             [ Html.text "eval" ]
         , output
         ]
