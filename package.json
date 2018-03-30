@@ -20,7 +20,7 @@
   "scripts": {
     "build": "webpack --mode=production",
     "client": "webpack-dev-server --port 3000 --mode=development",
-    "deploy": "push-dir --dir=dist --branch=gh-pages"
+    "deploy": "node_modules/push-dir/bin/push-dir.js --dir=dist --branch=gh-pages"
   },
   "author": "Swen Mulderij",
   "license": "MIT"
