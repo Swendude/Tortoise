@@ -3,6 +3,7 @@ module Main exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick, onInput)
+import Interpreter exposing (..)
 import List exposing (append, head, length, map, tail, take)
 import Parser exposing (Error)
 import String exposing (join, split)
@@ -85,10 +86,10 @@ update msg model =
 
         Eval ->
             let
-                upercaseInput =
+                sanetizedInput =
                     String.toUpper model.input
             in
-            ( { model | input = upercaseInput, output = Just (Parser.run tortoiseParser upercaseInput) }, Cmd.none )
+            ( { model | input = sanetizedInput, output = Just (Parser.run tortoiseParser sanetizedInput) }, Cmd.none )
 
 
 
