@@ -1,5 +1,6 @@
 module Interpreter exposing (..)
 
+import Debug exposing (..)
 import List exposing (..)
 import Maybe exposing (..)
 import Parser exposing (..)
@@ -26,7 +27,7 @@ type alias State =
     }
 
 
-initialize : String -> Result
+initialize : String -> Result () State
 initialize code =
     let
         parseResult =
@@ -39,13 +40,18 @@ initialize code =
                     Err ()
 
                 head :: tail ->
-                    Ok
-                        (State (CommandList [] head tail) (( 400, 400 ) ( 0, 0 ) 0))
+                    Debug.log
+                        (String.join
+                            "\n"
+                            (printTokens (head :: tail))
+                        )
+                        Ok
+                        (State (CommandList [] head tail) (TortoiseWorld ( 400, 400 ) ( 0, 0 ) 0))
 
-
-
---step : State -> State
---step state =
+        Err _ ->
+            Debug.log "ERROR IN CODE"
+                Err
+                ()
 
 
 stepCommand : CommandList -> CommandList
@@ -53,3 +59,26 @@ stepCommand commandList =
     CommandList (append commandList.before [ commandList.current ])
         (withDefault END (head commandList.after))
         (take ((-) (List.length commandList.after) 1) commandList.after)
+
+
+executeCommand : TortoiseWorld -> Token -> Result () TortoiseWorld
+executeCommand world command =
+    case command of
+        a ->
+            Debug.log (TortoiseParser.tokenToText a)
+                Ok
+                world
+
+
+runCommand : State -> Result () State
+runCommand state =
+    let
+        runResult =
+            executeCommand state.tortoiseWorld state.commandList.current
+    in
+    case runResult of
+        Ok resultWorld ->
+            Ok (State (stepCommand state.commandList) resultWorld)
+
+        Err _ ->
+            Err ()

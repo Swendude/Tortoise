@@ -9,6 +9,7 @@ import Parser exposing (Error)
 import String exposing (join, split)
 import Svg exposing (..)
 import Svg.Attributes exposing (..)
+import Time exposing (..)
 import TortoiseParser exposing (..)
 
 
@@ -32,12 +33,13 @@ type alias Model =
     , windowSize : Vector
     , input : String
     , output : Maybe (Result Parser.Error (List Token))
+    , interpreter : Result () State
     }
 
 
 init : ( Model, Cmd msg )
 init =
-    ( Model 0 { x = 0, y = 0 } [] { x = 500, y = 400 } "" Nothing, Cmd.none )
+    ( Model 0 { x = 0, y = 0 } [] { x = 500, y = 400 } "" Nothing (Err ()), Cmd.none )
 
 
 
@@ -49,6 +51,7 @@ type Msg
     | Forward Int
     | Change String
     | Eval
+    | StepInterpreter Time
 
 
 takeSteps : Int -> Int -> Vector -> Vector
@@ -89,7 +92,19 @@ update msg model =
                 sanetizedInput =
                     String.toUpper model.input
             in
-            ( { model | input = sanetizedInput, output = Just (Parser.run tortoiseParser sanetizedInput) }, Cmd.none )
+            ( { model | input = sanetizedInput, interpreter = Interpreter.initialize sanetizedInput }, Cmd.none )
+
+        StepInterpreter _ ->
+            case model.interpreter of
+                Ok state ->
+                    let
+                        interpreterState =
+                            runCommand state
+                    in
+                    ( { model | interpreter = interpreterState }, Cmd.none )
+
+                Err _ ->
+                    ( model, Cmd.none )
 
 
 
@@ -134,22 +149,23 @@ view model =
                     [ Html.text "LOGO in the browser" ]
                 ]
             ]
-        , div [ htmlclass "row" ]
-            [ div [ htmlclass "center-align" ]
-                [ svg
-                    [ Svg.Attributes.width (toString model.windowSize.x)
-                    , Svg.Attributes.height (toString model.windowSize.y)
-                    ]
-                    [ Svg.rect
-                        [ Svg.Attributes.width (toString model.windowSize.x)
-                        , Svg.Attributes.height (toString model.windowSize.y)
-                        , Svg.Attributes.fill "#eee"
-                        ]
-                        []
-                    , drawTurtle model
-                    ]
-                ]
-            ]
+
+        --, div [ htmlclass "row" ]
+        --    [ div [ htmlclass "center-align" ]
+        --        [ svg
+        --            [ Svg.Attributes.width (toString model.windowSize.x)
+        --            , Svg.Attributes.height (toString model.windowSize.y)
+        --            ]
+        --            [ Svg.rect
+        --                [ Svg.Attributes.width (toString model.windowSize.x)
+        --                , Svg.Attributes.height (toString model.windowSize.y)
+        --                , Svg.Attributes.fill "#eee"
+        --                ]
+        --                []
+        --            --, drawTurtle model
+        --            ]
+        --        ]
+        --    ]
         , div [ htmlclass "row" ]
             [ div [ htmlclass "input-field col s12" ]
                 [ Html.textarea [ htmlclass "materialize-textarea", onInput Change, Html.Attributes.value model.input ] []
@@ -161,31 +177,29 @@ view model =
         ]
 
 
-drawTurtle : Model -> Svg Msg
-drawTurtle model =
-    Svg.rect
-        [ Svg.Attributes.height "20"
-        , Svg.Attributes.width "10"
-        , Svg.Attributes.fill "#000"
-        , Svg.Attributes.x (toString (model.position.x + model.windowSize.x // 2 - 5))
-        , Svg.Attributes.y (toString (model.position.y + model.windowSize.y // 2 - 10))
-        , Svg.Attributes.transform
-            ("rotate("
-                ++ toString (model.heading - 90)
-                ++ " "
-                ++ toString (model.position.x + model.windowSize.x // 2)
-                ++ " "
-                ++ toString (model.position.y + model.windowSize.y // 2)
-                ++ ")"
-            )
-        ]
-        []
 
-
-
+--drawTurtle : Model -> Svg Msg
+--drawTurtle model =
+--    Svg.rect
+--        [ Svg.Attributes.height "20"
+--        , Svg.Attributes.width "10"
+--        , Svg.Attributes.fill "#000"
+--        , Svg.Attributes.x (toString (model.position.x + model.windowSize.x // 2 - 5))
+--        , Svg.Attributes.y (toString (model.position.y + model.windowSize.y // 2 - 10))
+--        , Svg.Attributes.transform
+--            ("rotate("
+--                ++ toString (model.heading - 90)
+--                ++ " "
+--                ++ toString (model.position.x + model.windowSize.x // 2)
+--                ++ " "
+--                ++ toString (model.position.y + model.windowSize.y // 2)
+--                ++ ")"
+--            )
+--        ]
+--        []
 -- SUBSCRIPTIONS
 
 
 subscription : Model -> Sub Msg
 subscription model =
-    Sub.none
+    Time.every second StepInterpreter
