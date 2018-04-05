@@ -7,6 +7,7 @@ type Token
     = FORWARD Int
     | LEFT Int
     | RIGHT Int
+    | END
 
 
 space : Parser ()
@@ -80,6 +81,9 @@ tokenToText token =
 
         RIGHT n ->
             "RIGHT " ++ toString n
+
+        END ->
+            "END"
 
 
 printProblems : Parser.Problem -> List String
