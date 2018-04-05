@@ -7,11 +7,13 @@ import Parser exposing (..)
 import TortoiseParser exposing (..)
 
 
-type alias CommandList =
-    { before : List Token
-    , current : Token
-    , after : List Token
-    }
+type CommandList
+    = Error Parser.Error
+    | CommandList
+        { before : List Token
+        , current : Token
+        , after : List Token
+        }
 
 
 type alias TortoiseWorld =
@@ -46,7 +48,10 @@ initialize code =
                             (printTokens (head :: tail))
                         )
                         Ok
-                        (State (CommandList [] head tail) (TortoiseWorld ( 400, 400 ) ( 0, 0 ) 0))
+                        (State
+                            (CommandList { before = [], current = head, after = tail })
+                            (TortoiseWorld ( 400, 400 ) ( 0, 0 ) 0)
+                        )
 
         Err _ ->
             Debug.log "ERROR IN CODE"
@@ -56,9 +61,16 @@ initialize code =
 
 stepCommand : CommandList -> CommandList
 stepCommand commandList =
-    CommandList (append commandList.before [ commandList.current ])
-        (withDefault END (head commandList.after))
-        (take ((-) (List.length commandList.after) 1) commandList.after)
+    case commandList of
+        Error _ ->
+            commandList
+
+        CommandList cl ->
+            CommandList
+                { before = append cl.before [ cl.current ]
+                , current = withDefault END (head cl.after)
+                , after = take ((-) (List.length cl.after) 1) cl.after
+                }
 
 
 executeCommand : TortoiseWorld -> Token -> Result () TortoiseWorld
@@ -72,23 +84,33 @@ executeCommand world command =
 
 runCommand : State -> Result () State
 runCommand state =
-    let
-        runResult =
-            executeCommand state.tortoiseWorld state.commandList.current
-    in
-    case runResult of
-        Ok resultWorld ->
-            Ok (State (stepCommand state.commandList) resultWorld)
-
-        Err _ ->
+    case state.commandList of
+        Error _ ->
             Err ()
+
+        CommandList cl ->
+            let
+                runResult =
+                    executeCommand state.tortoiseWorld cl.current
+            in
+            case runResult of
+                Ok resultWorld ->
+                    Ok (State (stepCommand state.commandList) resultWorld)
+
+                Err _ ->
+                    Err ()
 
 
 isDone : State -> Bool
 isDone state =
-    case state.commandList.current of
-        END ->
-            True
+    case state.commandList of
+        CommandList cl ->
+            case cl.current of
+                END ->
+                    True
 
-        _ ->
-            False
+                _ ->
+                    False
+
+        Error _ ->
+            True

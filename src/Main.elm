@@ -6,9 +6,8 @@ import Html.Events exposing (onClick, onInput)
 import Interpreter exposing (..)
 import List exposing (append, head, length, map, tail, take)
 import Parser exposing (Error)
+import Renderer exposing (..)
 import String exposing (join, split)
-import Svg exposing (..)
-import Svg.Attributes exposing (..)
 import Time exposing (..)
 import TortoiseParser exposing (..)
 
@@ -33,7 +32,7 @@ type alias Model =
     , windowSize : Vector
     , input : String
     , output : Maybe (Result Parser.Error (List Token))
-    , interpreter : Result () State
+    , interpreter : State
     }
 
 
@@ -152,19 +151,7 @@ view model =
 
         --, div [ htmlclass "row" ]
         --    [ div [ htmlclass "center-align" ]
-        --        [ svg
-        --            [ Svg.Attributes.width (toString model.windowSize.x)
-        --            , Svg.Attributes.height (toString model.windowSize.y)
-        --            ]
-        --            [ Svg.rect
-        --                [ Svg.Attributes.width (toString model.windowSize.x)
-        --                , Svg.Attributes.height (toString model.windowSize.y)
-        --                , Svg.Attributes.fill "#eee"
-        --                ]
-        --                []
-        --            --, drawTurtle model
-        --            ]
-        --        ]
+        --        renderWorld model.
         --    ]
         , div [ htmlclass "row" ]
             [ div [ htmlclass "input-field col s12" ]
@@ -178,25 +165,6 @@ view model =
 
 
 
---drawTurtle : Model -> Svg Msg
---drawTurtle model =
---    Svg.rect
---        [ Svg.Attributes.height "20"
---        , Svg.Attributes.width "10"
---        , Svg.Attributes.fill "#000"
---        , Svg.Attributes.x (toString (model.position.x + model.windowSize.x // 2 - 5))
---        , Svg.Attributes.y (toString (model.position.y + model.windowSize.y // 2 - 10))
---        , Svg.Attributes.transform
---            ("rotate("
---                ++ toString (model.heading - 90)
---                ++ " "
---                ++ toString (model.position.x + model.windowSize.x // 2)
---                ++ " "
---                ++ toString (model.position.y + model.windowSize.y // 2)
---                ++ ")"
---            )
---        ]
---        []
 -- SUBSCRIPTIONS
 
 
