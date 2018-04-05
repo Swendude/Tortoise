@@ -82,3 +82,13 @@ runCommand state =
 
         Err _ ->
             Err ()
+
+
+isDone : State -> Bool
+isDone state =
+    case state.commandList.current of
+        END ->
+            True
+
+        _ ->
+            False

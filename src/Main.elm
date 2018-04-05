@@ -202,4 +202,12 @@ view model =
 
 subscription : Model -> Sub Msg
 subscription model =
-    Time.every second StepInterpreter
+    case model.interpreter of
+        Ok state ->
+            if isDone state then
+                Sub.none
+            else
+                Time.every second StepInterpreter
+
+        Err _ ->
+            Sub.none
