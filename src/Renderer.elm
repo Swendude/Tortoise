@@ -1,16 +1,12 @@
 module Renderer exposing (..)
 
+import Html exposing (..)
 import Interpreter exposing (State, TortoiseWorld)
 import Svg exposing (..)
 import Svg.Attributes exposing (..)
 import Tuple exposing (..)
 
 
---type alias TortoiseWorld =
---    { worldDimensions : ( Int, Int )
---    , position : ( Int, Int )
---    , heading : Int
---    }
 --        [ svg
 --            [ Svg.Attributes.width (toString model.windowSize.x)
 --            , Svg.Attributes.height (toString model.windowSize.y)
@@ -43,18 +39,40 @@ import Tuple exposing (..)
 --            )
 --        ]
 --        []
+--type alias TortoiseWorld =
+--    { worldDimensions : ( Int, Int )
+--    , position : ( Int, Int )
+--    , heading : Int
+--    }
 
 
-render : Result () State -> Svg msg
-render state =
+render : TortoiseWorld -> Html msg
+render tw =
     svg
-        [ width ((toString << first) tw.worldDimensions)
-        , height ((toString << second) tw.worldDimensions)
+        [ width (toString (first tw.worldDimensions))
+        , height (toString (second tw.worldDimensions))
         ]
         [ rect
-            [ width ((toString << first) tw.worldDimensions)
-            , height ((toString << second) tw.worldDimensions)
+            [ width (toString (first tw.worldDimensions))
+            , height (toString (second tw.worldDimensions))
             , fill "#eee"
+            ]
+            []
+        , rect
+            [ Svg.Attributes.height "10"
+            , Svg.Attributes.width "20"
+            , Svg.Attributes.fill "#000"
+            , Svg.Attributes.x (toString (first tw.position + first tw.worldDimensions // 2 - 10))
+            , Svg.Attributes.y (toString (second tw.position + second tw.worldDimensions // 2 - 5))
+            , Svg.Attributes.transform
+                ("rotate("
+                    ++ toString tw.heading
+                    ++ " "
+                    ++ toString (first tw.position + first tw.worldDimensions // 2)
+                    ++ " "
+                    ++ toString (second tw.position + second tw.worldDimensions // 2)
+                    ++ ")"
+                )
             ]
             []
         ]

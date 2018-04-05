@@ -31,14 +31,21 @@ type alias Model =
     , line : List Vector
     , windowSize : Vector
     , input : String
-    , output : Maybe (Result Parser.Error (List Token))
     , interpreter : State
     }
 
 
 init : ( Model, Cmd msg )
 init =
-    ( Model 0 { x = 0, y = 0 } [] { x = 500, y = 400 } "" Nothing (Err ()), Cmd.none )
+    ( Model
+        0
+        { x = 0, y = 0 }
+        []
+        { x = 500, y = 400 }
+        ""
+        (initialize "")
+    , Cmd.none
+    )
 
 
 
@@ -46,18 +53,9 @@ init =
 
 
 type Msg
-    = Rotate Int
-    | Forward Int
-    | Change String
+    = Change String
     | Eval
     | StepInterpreter Time
-
-
-takeSteps : Int -> Int -> Vector -> Vector
-takeSteps steps heading oldpos =
-    { x = round (toFloat steps * Basics.cos (degrees (toFloat heading))) + oldpos.x
-    , y = round (toFloat steps * Basics.sin (degrees (toFloat heading))) + oldpos.y
-    }
 
 
 {-| Takes a newline seperated string and returns all lines except the last |
@@ -77,12 +75,6 @@ ignoreLast input =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        Rotate n ->
-            ( { model | heading = (model.heading + n) % 360 }, Cmd.none )
-
-        Forward n ->
-            ( { model | position = takeSteps n model.heading model.position, line = model.position :: model.line }, Cmd.none )
-
         Change inputString ->
             ( { model | input = inputString }, Cmd.none )
 
@@ -94,13 +86,13 @@ update msg model =
             ( { model | input = sanetizedInput, interpreter = Interpreter.initialize sanetizedInput }, Cmd.none )
 
         StepInterpreter _ ->
-            case model.interpreter of
+            let
+                interpreterState =
+                    runCommand model.interpreter
+            in
+            case interpreterState of
                 Ok state ->
-                    let
-                        interpreterState =
-                            runCommand state
-                    in
-                    ( { model | interpreter = interpreterState }, Cmd.none )
+                    ( { model | interpreter = state }, Cmd.none )
 
                 Err _ ->
                     ( model, Cmd.none )
@@ -119,23 +111,18 @@ view : Model -> Html Msg
 view model =
     let
         output =
-            case model.output of
-                Just (Ok val) ->
-                    Html.div []
-                        (Html.h5 [] [ Html.text "Succes!: " ]
-                            :: List.map (\tokenstring -> Html.p [ htmlclass "green-text text-darken-2" ] [ Html.text tokenstring ]) (printTokens val)
-                        )
-
-                Just (Err val) ->
-                    Html.div []
+            case model.interpreter.commandList of
+                Error val ->
+                    Html.div [ htmlclass "col s12 center-align" ]
                         (Html.h5 [] [ Html.text "Errors: " ]
                             :: List.map (\problemstring -> Html.p [ htmlclass "red-text text-darken-2" ] [ Html.text problemstring ]) (printProblems val.problem)
                         )
 
-                Nothing ->
-                    Html.div []
-                        [ Html.p [] [ Html.text "Welcome to Tortoise. Eval some code to begin!" ]
-                        ]
+                CommandList cl ->
+                    Html.div [ htmlclass "col s12 center-align" ]
+                        (Html.h5 [] [ Html.text "Succes!: " ]
+                            :: List.map (\tokenstring -> Html.p [ htmlclass "green-text text-darken-2" ] [ Html.text tokenstring ]) (printTokens (cl.current :: cl.before))
+                        )
     in
     div [ htmlclass "container" ]
         [ div [ htmlclass "row" ]
@@ -143,24 +130,34 @@ view model =
                 [ h4 [ htmlclass "center-align" ]
                     [ Html.text "Tortoise" ]
                 ]
-            , div [ htmlclass "col s12" ]
-                [ p [ htmlclass "center-align" ]
-                    [ Html.text "LOGO in the browser" ]
-                ]
             ]
-
-        --, div [ htmlclass "row" ]
-        --    [ div [ htmlclass "center-align" ]
-        --        renderWorld model.
-        --    ]
         , div [ htmlclass "row" ]
-            [ div [ htmlclass "input-field col s12" ]
-                [ Html.textarea [ htmlclass "materialize-textarea", onInput Change, Html.Attributes.value model.input ] []
+            [ div [ htmlclass "col s6" ]
+                [ render model.interpreter.tortoiseWorld ]
+            , div
+                [ htmlclass "input-field col s4 push-s2 blue-grey lighten-5"
+                , Html.Attributes.style [ ( "margin", "0" ) ]
+                ]
+                [ Html.textarea
+                    [ htmlclass "materialize-textarea"
+                    , Html.Attributes.style [ ( "height", "400px" ), ( "padding", "0" ) ]
+                    , onInput Change
+                    , Html.Attributes.value model.input
+                    ]
+                    []
                 ]
             ]
-        , Html.button [ htmlclass "btn waves-effect waves-light", Html.Events.onClick Eval ]
-            [ Html.text "eval" ]
-        , output
+        , div [ htmlclass "row" ]
+            [ div [ htmlclass "right-align" ]
+                [ Html.button
+                    [ htmlclass "btn waves-effect waves-light"
+                    , Html.Events.onClick Eval
+                    ]
+                    [ Html.text "eval" ]
+                ]
+            ]
+        , div [ htmlclass "row center-align" ]
+            [ output ]
         ]
 
 
@@ -170,12 +167,7 @@ view model =
 
 subscription : Model -> Sub Msg
 subscription model =
-    case model.interpreter of
-        Ok state ->
-            if isDone state then
-                Sub.none
-            else
-                Time.every second StepInterpreter
-
-        Err _ ->
-            Sub.none
+    if isDone model.interpreter then
+        Sub.none
+    else
+        Time.every second StepInterpreter

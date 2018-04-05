@@ -5,6 +5,7 @@ import List exposing (..)
 import Maybe exposing (..)
 import Parser exposing (..)
 import TortoiseParser exposing (..)
+import Tuple exposing (..)
 
 
 type CommandList
@@ -29,7 +30,7 @@ type alias State =
     }
 
 
-initialize : String -> Result () State
+initialize : String -> State
 initialize code =
     let
         parseResult =
@@ -39,24 +40,19 @@ initialize code =
         Ok commands ->
             case commands of
                 [] ->
-                    Err ()
+                    State
+                        (CommandList { before = [], current = END, after = [] })
+                        (TortoiseWorld ( 400, 400 ) ( 0, 0 ) 0)
 
                 head :: tail ->
-                    Debug.log
-                        (String.join
-                            "\n"
-                            (printTokens (head :: tail))
-                        )
-                        Ok
-                        (State
-                            (CommandList { before = [], current = head, after = tail })
-                            (TortoiseWorld ( 400, 400 ) ( 0, 0 ) 0)
-                        )
+                    State
+                        (CommandList { before = [], current = head, after = tail })
+                        (TortoiseWorld ( 400, 400 ) ( 0, 0 ) 0)
 
-        Err _ ->
-            Debug.log "ERROR IN CODE"
-                Err
-                ()
+        Err parserError ->
+            State
+                (Error parserError)
+                (TortoiseWorld ( 400, 400 ) ( 0, 0 ) 0)
 
 
 stepCommand : CommandList -> CommandList
@@ -69,17 +65,31 @@ stepCommand commandList =
             CommandList
                 { before = append cl.before [ cl.current ]
                 , current = withDefault END (head cl.after)
-                , after = take ((-) (List.length cl.after) 1) cl.after
+                , after = drop 1 cl.after
                 }
+
+
+takeSteps : Int -> Int -> ( Int, Int ) -> ( Int, Int )
+takeSteps steps heading oldpos =
+    ( round (toFloat steps * Basics.cos (degrees (toFloat heading))) + first oldpos
+    , round (toFloat steps * Basics.sin (degrees (toFloat heading))) + second oldpos
+    )
 
 
 executeCommand : TortoiseWorld -> Token -> Result () TortoiseWorld
 executeCommand world command =
     case command of
-        a ->
-            Debug.log (TortoiseParser.tokenToText a)
-                Ok
-                world
+        FORWARD n ->
+            Ok { world | position = takeSteps n world.heading world.position }
+
+        LEFT n ->
+            Ok { world | heading = world.heading - n }
+
+        RIGHT n ->
+            Ok { world | heading = world.heading + n }
+
+        END ->
+            Ok world
 
 
 runCommand : State -> Result () State
