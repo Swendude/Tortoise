@@ -3,8 +3,7 @@
   "version": "1.0.0",
   "description": "This is a (silly) attempt to create a programming language and envirnoment that's designed to enable constructionist teaching.",
   "private": true,
-  "dependencies": {
-  },
+  "dependencies": {},
   "devDependencies": {
     "webpack": "^4.3.0",
     "webpack-cli": "^2.0.13",
