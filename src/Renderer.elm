@@ -52,8 +52,9 @@ render tw =
                 , fill "#eee"
                 ]
                 []
-            , axis
+            , renderAxis
             , renderTurtle tw
+            , renderLines tw
             ]
         ]
 
@@ -96,8 +97,8 @@ triangle w h i =
 --"0,0 5,10, 10,0"
 
 
-axis : Svg msg
-axis =
+renderAxis : Svg msg
+renderAxis =
     g []
         [ line
             [ x1 "0"
@@ -144,6 +145,25 @@ axis =
             ]
             []
         ]
+
+
+renderLines : TortoiseWorld -> Svg msg
+renderLines tw =
+    g []
+        (List.map
+            (\tl ->
+                line
+                    [ x1 (toString tl.x1)
+                    , y1 (toString tl.y1)
+                    , x2 (toString tl.x2)
+                    , y2 (toString tl.y2)
+                    , strokeWidth "1"
+                    , stroke "rgb(0,0,0)"
+                    ]
+                    []
+            )
+            tw.lines
+        )
 
 
 

@@ -7,6 +7,9 @@ type Token
     = FORWARD Int
     | LEFT Int
     | RIGHT Int
+    | PENUP
+    | PENDOWN
+    | PENCOLOR Int Int Int
     | END
 
 
@@ -33,6 +36,9 @@ move =
         [ forwardParser
         , leftParser
         , rightParser
+        , pendownParser
+        , penupParser
+        , pencolorParser
         ]
         |. oneOf [ newLine, Parser.end ]
 
@@ -57,11 +63,39 @@ rightParser : Parser Token
 rightParser =
     succeed RIGHT
         |. keyword "RIGHT"
-        |. Parser.symbol " "
+        |. space
+        |= int
+
+
+penupParser : Parser Token
+penupParser =
+    succeed PENUP
+        |. keyword "PENUP"
+
+
+pendownParser : Parser Token
+pendownParser =
+    succeed PENDOWN
+        |. keyword "PENDOWN"
+
+
+pencolorParser : Parser Token
+pencolorParser =
+    succeed PENCOLOR
+        |. keyword "PENCOLOR"
+        |. space
+        |= int
+        |. space
+        |= int
+        |. space
         |= int
 
 
 
+--        |. space
+--        |= int
+--        |. space
+--        |= int
 -- DEBUG
 
 
@@ -81,6 +115,15 @@ tokenToText token =
 
         RIGHT n ->
             "RIGHT " ++ toString n
+
+        PENUP ->
+            "PENUP"
+
+        PENDOWN ->
+            "PENDOWN"
+
+        PENCOLOR r g b ->
+            "PENCOLOR " ++ toString r ++ " " ++ toString g ++ " " ++ toString b
 
         END ->
             "END"

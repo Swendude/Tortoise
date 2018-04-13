@@ -17,10 +17,22 @@ type CommandList
         }
 
 
+type alias TortoiseLine =
+    { x1 : Int
+    , y1 : Int
+    , x2 : Int
+    , y2 : Int
+    , color : ( Int, Int, Int )
+    }
+
+
 type alias TortoiseWorld =
     { worldDimensions : ( Int, Int )
     , position : ( Int, Int )
     , heading : Int
+    , pendown : Bool
+    , color : ( Int, Int, Int )
+    , lines : List TortoiseLine
     }
 
 
@@ -35,6 +47,9 @@ initialize code =
     let
         parseResult =
             run tortoiseParser code
+
+        defaultTortoiseWorld =
+            TortoiseWorld ( 400, 400 ) ( 0, 0 ) 0 False ( 0, 0, 0 ) []
     in
     case parseResult of
         Ok commands ->
@@ -42,17 +57,17 @@ initialize code =
                 [] ->
                     State
                         (CommandList { before = [], current = END, after = [] })
-                        (TortoiseWorld ( 400, 400 ) ( 0, 0 ) 0)
+                        defaultTortoiseWorld
 
                 head :: tail ->
                     State
                         (CommandList { before = [], current = head, after = tail })
-                        (TortoiseWorld ( 400, 400 ) ( 0, 0 ) 0)
+                        defaultTortoiseWorld
 
         Err parserError ->
             State
                 (Error parserError)
-                (TortoiseWorld ( 400, 400 ) ( 0, 0 ) 0)
+                defaultTortoiseWorld
 
 
 stepCommand : CommandList -> CommandList
@@ -91,13 +106,40 @@ executeCommand : TortoiseWorld -> Token -> Result () TortoiseWorld
 executeCommand world command =
     case command of
         FORWARD n ->
-            Ok { world | position = takeSteps n world.heading world.position }
+            let
+                newPos =
+                    takeSteps n world.heading world.position
+
+                newLines =
+                    case world.pendown of
+                        True ->
+                            world.lines
+                                ++ [ TortoiseLine (first world.position)
+                                        (second world.position)
+                                        (first newPos)
+                                        (second newPos)
+                                        world.color
+                                   ]
+
+                        False ->
+                            world.lines
+            in
+            Ok { world | position = newPos, lines = newLines }
 
         LEFT n ->
             Ok { world | heading = world.heading - n }
 
         RIGHT n ->
             Ok { world | heading = world.heading + n }
+
+        PENDOWN ->
+            Ok { world | pendown = True }
+
+        PENUP ->
+            Ok { world | pendown = False }
+
+        PENCOLOR r g b ->
+            Ok { world | color = ( r, g, b ) }
 
         END ->
             Ok world
