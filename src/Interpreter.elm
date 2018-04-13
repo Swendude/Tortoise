@@ -69,10 +69,21 @@ stepCommand commandList =
                 }
 
 
+tortoiseDegrees : Int -> Int
+tortoiseDegrees deg =
+    (90 - deg) % 360
+
+
+
+--radians : Float -> Float
+--radians degree =
+--    degree * pi / 180
+
+
 takeSteps : Int -> Int -> ( Int, Int ) -> ( Int, Int )
 takeSteps steps heading oldpos =
-    ( round (toFloat steps * Basics.cos (degrees (toFloat heading))) + first oldpos
-    , round (toFloat steps * Basics.sin (degrees (toFloat heading))) + second oldpos
+    ( round (toFloat steps * Basics.cos (degrees (toFloat (tortoiseDegrees heading)))) + first oldpos
+    , round (toFloat steps * Basics.sin (degrees (toFloat (tortoiseDegrees heading)))) + second oldpos
     )
 
 

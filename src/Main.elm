@@ -26,11 +26,7 @@ type alias Vector =
 
 
 type alias Model =
-    { heading : Int
-    , position : Vector
-    , line : List Vector
-    , windowSize : Vector
-    , input : String
+    { input : String
     , interpreter : State
     }
 
@@ -38,10 +34,6 @@ type alias Model =
 init : ( Model, Cmd msg )
 init =
     ( Model
-        0
-        { x = 0, y = 0 }
-        []
-        { x = 500, y = 400 }
         ""
         (initialize "")
     , Cmd.none
@@ -123,6 +115,12 @@ view model =
                         (Html.h5 [] [ Html.text "Succes!: " ]
                             :: List.map (\tokenstring -> Html.p [ htmlclass "green-text text-darken-2" ] [ Html.text tokenstring ]) (printTokens (cl.current :: cl.before))
                         )
+
+        turtleStatus =
+            Html.div []
+                [ Html.text ("pos: " ++ toString model.interpreter.tortoiseWorld.position)
+                , Html.text (" heading: " ++ toString model.interpreter.tortoiseWorld.heading)
+                ]
     in
     div [ htmlclass "container" ]
         [ div [ htmlclass "row" ]
@@ -157,7 +155,9 @@ view model =
                 ]
             ]
         , div [ htmlclass "row center-align" ]
-            [ output ]
+            [ turtleStatus
+            , output
+            ]
         ]
 
 
