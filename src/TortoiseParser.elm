@@ -15,9 +15,19 @@ type Token
     | END
 
 
+spaces : Parser ()
+spaces =
+    ignore (Parser.AtLeast 1) ((==) ' ')
+
+
 space : Parser ()
 space =
-    ignore (Parser.AtLeast 1) ((==) ' ')
+    keyword " "
+
+
+tortoiseWhitespace : Char -> Bool
+tortoiseWhitespace c =
+    List.member c [ ' ', '\t' ]
 
 
 zeroOrMoreWhitespace : Parser ()
@@ -25,8 +35,8 @@ zeroOrMoreWhitespace =
     ignore zeroOrMore tortoiseWhitespace
 
 
-newLine : Parser ()
-newLine =
+newLines : Parser ()
+newLines =
     ignore Parser.oneOrMore ((==) '\n')
 
 
@@ -37,89 +47,92 @@ tortoiseParser =
         |. Parser.end
 
 
-tortoiseWhitespace : Char -> Bool
-tortoiseWhitespace c =
-    List.member c [ ' ', '\t' ]
-
-
 tortoiseCommand : Parser Token
 tortoiseCommand =
-    oneOf
-        [ forwardParser
-        , leftParser
-        , rightParser
-        , pendownParser
-        , penupParser
-        , pencolorParser
-        , repeatParser
-        ]
-        |. zeroOrMoreWhitespace
-        |. oneOf [ newLine, Parser.end ]
+    Parser.inContext "COMMAND" <|
+        oneOf
+            [ forwardParser
+            , leftParser
+            , rightParser
+            , pendownParser
+            , penupParser
+            , pencolorParser
+            , lazy (\_ -> repeatParser)
+            ]
+            |. zeroOrMoreWhitespace
+            |. oneOf [ newLines, Parser.end ]
 
 
 repeatParser : Parser Token
 repeatParser =
-    succeed REPEAT
-        |. keyword "REPEAT"
-        |. space
-        |= int
-        |. Parser.symbol "["
-        |= lazy (\_ -> Parser.repeat oneOrMore tortoiseCommand)
+    Parser.inContext "REPEAT" <|
+        succeed REPEAT
+            |. keyword "REPEAT"
+            |. space
+            |= int
+            |. space
+            |. Parser.symbol "["
+            |. newLines
+            |= lazy (\_ -> Parser.repeat oneOrMore tortoiseCommand)
+            |. newLines
+            |. Parser.symbol "]"
 
 
 forwardParser : Parser Token
 forwardParser =
-    succeed FORWARD
-        |. keyword "FORWARD"
-        |. space
-        |= int
+    Parser.inContext "FORWARD" <|
+        succeed FORWARD
+            |. keyword "FORWARD"
+            |. space
+            |= int
 
 
 leftParser : Parser Token
 leftParser =
-    succeed LEFT
-        |. keyword "LEFT"
-        |. space
-        |= int
+    Parser.inContext "LEFT" <|
+        succeed LEFT
+            |. keyword "LEFT"
+            |. space
+            |= int
 
 
 rightParser : Parser Token
 rightParser =
-    succeed RIGHT
-        |. keyword "RIGHT"
-        |. space
-        |= int
+    Parser.inContext "RIGHT" <|
+        succeed RIGHT
+            |. keyword "RIGHT"
+            |. space
+            |= int
 
 
 penupParser : Parser Token
 penupParser =
-    succeed PENUP
-        |. keyword "PENUP"
+    Parser.inContext "PENUP" <|
+        succeed PENUP
+            |. keyword "PENUP"
 
 
 pendownParser : Parser Token
 pendownParser =
-    succeed PENDOWN
-        |. keyword "PENDOWN"
+    Parser.inContext "PENDOWN" <|
+        succeed PENDOWN
+            |. keyword "PENDOWN"
 
 
 pencolorParser : Parser Token
 pencolorParser =
-    succeed PENCOLOR
-        |. keyword "PENCOLOR"
-        |. space
-        |= int
-        |. space
-        |= int
-        |. space
-        |= int
+    Parser.inContext "PENCOLOR" <|
+        succeed PENCOLOR
+            |. keyword "PENCOLOR"
+            |. space
+            |= int
+            |. space
+            |= int
+            |. space
+            |= int
 
 
 
---        |. space
---        |= int
---        |. space
---        |= int
 -- DEBUG
 
 
@@ -154,6 +167,16 @@ tokenToText token =
 
         END ->
             "END"
+
+
+printContexts : List Parser.Context -> String
+printContexts contexts =
+    Maybe.withDefault "" (List.head (List.map printContext contexts))
+
+
+printContext : Parser.Context -> String
+printContext c =
+    "( line: " ++ toString c.row ++ " ) " ++ c.description
 
 
 printProblems : Parser.Problem -> List String

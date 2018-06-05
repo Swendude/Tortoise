@@ -106,7 +106,7 @@ view model =
             case model.interpreter.commandList of
                 Error val ->
                     Html.div [ htmlclass "col s12 center-align" ]
-                        (Html.h5 [] [ Html.text "Errors: " ]
+                        (Html.h5 [] [ Html.text ("Errors on " ++ printContexts val.context) ]
                             :: List.map (\problemstring -> Html.p [ htmlclass "red-text text-darken-2" ] [ Html.text problemstring ]) (printProblems val.problem)
                         )
 
