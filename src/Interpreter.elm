@@ -46,7 +46,10 @@ initialize : String -> State
 initialize code =
     let
         parseResult =
-            run tortoiseParser code
+            --Debug.log code
+            run
+                tortoiseParser
+                code
 
         defaultTortoiseWorld =
             TortoiseWorld ( 400, 400 ) ( 0, 0 ) 0 False ( 0, 0, 0 ) []
@@ -102,6 +105,25 @@ takeSteps steps heading oldpos =
     )
 
 
+executeListOfCommands : List Token -> TortoiseWorld -> Result () TortoiseWorld
+executeListOfCommands code tw =
+    case code of
+        [] ->
+            Ok tw
+
+        first :: rest ->
+            let
+                result =
+                    executeCommand tw first
+            in
+            case result of
+                Ok tw ->
+                    executeListOfCommands rest tw
+
+                Err () ->
+                    Err ()
+
+
 executeCommand : TortoiseWorld -> Token -> Result () TortoiseWorld
 executeCommand world command =
     case command of
@@ -141,6 +163,18 @@ executeCommand world command =
         PENCOLOR r g b ->
             Ok { world | color = ( r, g, b ) }
 
+        REPEAT c code ->
+            Ok world
+
+        --let
+        --    executed_tw =
+        --        executeListOfCommands code world
+        --in
+        --case executed_tw of
+        --    Ok tw ->
+        --        Ok tw
+        --    Err () ->
+        --        Err ()
         END ->
             Ok world
 

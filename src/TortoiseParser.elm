@@ -1,6 +1,7 @@
 module TortoiseParser exposing (..)
 
-import Parser exposing ((|.), (|=), Parser, ignore, int, keyword, oneOf, oneOrMore, repeat, succeed, symbol, zeroOrMore)
+import Parser exposing ((|.), (|=), Parser, ignore, int, keyword, lazy, oneOf, oneOrMore, repeat, succeed, symbol, zeroOrMore)
+import Parser.LanguageKit exposing (MultiComment, whitespace)
 
 
 type Token
@@ -10,12 +11,18 @@ type Token
     | PENUP
     | PENDOWN
     | PENCOLOR Int Int Int
+    | REPEAT Int (List Token)
     | END
 
 
 space : Parser ()
 space =
     ignore (Parser.AtLeast 1) ((==) ' ')
+
+
+zeroOrMoreWhitespace : Parser ()
+zeroOrMoreWhitespace =
+    ignore zeroOrMore tortoiseWhitespace
 
 
 newLine : Parser ()
@@ -26,7 +33,7 @@ newLine =
 tortoiseParser : Parser (List Token)
 tortoiseParser =
     succeed Basics.identity
-        |= repeat oneOrMore move
+        |= repeat oneOrMore tortoiseCommand
         |. Parser.end
 
 
@@ -35,8 +42,8 @@ tortoiseWhitespace c =
     List.member c [ ' ', '\t' ]
 
 
-move : Parser Token
-move =
+tortoiseCommand : Parser Token
+tortoiseCommand =
     oneOf
         [ forwardParser
         , leftParser
@@ -44,9 +51,20 @@ move =
         , pendownParser
         , penupParser
         , pencolorParser
+        , repeatParser
         ]
-        |. ignore zeroOrMore tortoiseWhitespace
+        |. zeroOrMoreWhitespace
         |. oneOf [ newLine, Parser.end ]
+
+
+repeatParser : Parser Token
+repeatParser =
+    succeed REPEAT
+        |. keyword "REPEAT"
+        |. space
+        |= int
+        |. Parser.symbol "["
+        |= lazy (\_ -> Parser.repeat oneOrMore tortoiseCommand)
 
 
 forwardParser : Parser Token
@@ -130,6 +148,9 @@ tokenToText token =
 
         PENCOLOR r g b ->
             "PENCOLOR " ++ toString r ++ " " ++ toString g ++ " " ++ toString b
+
+        REPEAT c code ->
+            "REPEAT [ " ++ String.join "\n" (List.map tokenToText code) ++ " ]"
 
         END ->
             "END"
