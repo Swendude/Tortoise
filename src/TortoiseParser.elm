@@ -30,6 +30,11 @@ tortoiseParser =
         |. Parser.end
 
 
+tortoiseWhitespace : Char -> Bool
+tortoiseWhitespace c =
+    List.member c [ ' ', '\t' ]
+
+
 move : Parser Token
 move =
     oneOf
@@ -40,6 +45,7 @@ move =
         , penupParser
         , pencolorParser
         ]
+        |. ignore zeroOrMore tortoiseWhitespace
         |. oneOf [ newLine, Parser.end ]
 
 
