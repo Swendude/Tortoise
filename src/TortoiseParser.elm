@@ -17,12 +17,14 @@ type Token
 
 spaces : Parser ()
 spaces =
-    ignore (Parser.AtLeast 1) ((==) ' ')
+    Parser.inContext "SPACE+" <|
+        ignore (Parser.AtLeast 1) ((==) ' ')
 
 
 space : Parser ()
 space =
-    keyword " "
+    Parser.inContext "SPACE" <|
+        keyword " "
 
 
 tortoiseWhitespace : Char -> Bool
@@ -32,19 +34,22 @@ tortoiseWhitespace c =
 
 zeroOrMoreWhitespace : Parser ()
 zeroOrMoreWhitespace =
-    ignore zeroOrMore tortoiseWhitespace
+    Parser.inContext "WS*" <|
+        ignore zeroOrMore tortoiseWhitespace
 
 
 newLines : Parser ()
 newLines =
-    ignore Parser.oneOrMore ((==) '\n')
+    Parser.inContext "NL+" <|
+        ignore Parser.oneOrMore ((==) '\n')
 
 
 tortoiseParser : Parser (List Token)
 tortoiseParser =
-    succeed Basics.identity
-        |= repeat oneOrMore tortoiseCommand
-        |. Parser.end
+    Parser.inContext "MAIN" <|
+        succeed Basics.identity
+            |= repeat oneOrMore tortoiseCommand
+            |. Parser.end
 
 
 tortoiseCommand : Parser Token
@@ -68,13 +73,12 @@ repeatParser =
     Parser.inContext "REPEAT" <|
         succeed REPEAT
             |. keyword "REPEAT"
-            |. space
+            |. spaces
             |= int
-            |. space
+            |. spaces
             |. Parser.symbol "["
             |. newLines
             |= lazy (\_ -> Parser.repeat oneOrMore tortoiseCommand)
-            |. newLines
             |. Parser.symbol "]"
 
 
@@ -176,7 +180,7 @@ printContexts contexts =
 
 printContext : Parser.Context -> String
 printContext c =
-    "( line: " ++ toString c.row ++ " ) " ++ c.description
+    "( line: " ++ toString c.row ++ ", " ++ toString c.col ++ " ) " ++ c.description
 
 
 printProblems : Parser.Problem -> List String
