@@ -3,7 +3,15 @@
   "version": "1.0.0",
   "description": "This is a (silly) attempt to create a programming language and envirnoment that's designed to enable constructionist teaching.",
   "private": true,
+  "homepage": "https://swendude.github.io/Tortoise/",
   "dependencies": {},
+  "bugs": { 
+    "url" : "https://github.com/Swendude/Tortoise/issues"
+  },
+  "repository" :{ 
+      "type" : "git"
+    , "url" : "git@github.com:Swendude/Tortoise.git"
+  },
   "devDependencies": {
     "webpack": "^4.3.0",
     "webpack-cli": "^2.0.13",
@@ -19,6 +27,8 @@
   "scripts": {
     "build": "webpack --mode=production",
     "client": "webpack-dev-server --port 3000 --mode=development",
+    "start": "npm run client",
+    "reactor": "elm-reactor",
     "deploy": "node_modules/push-dir/bin/push-dir.js --dir=dist --branch=gh-pages"
   },
   "author": "Swen Mulderij",
