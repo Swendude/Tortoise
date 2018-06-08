@@ -4,7 +4,7 @@ This is the repository containing source code and build systems for the Tortoise
 
 ## About
 
-This is a (silly) attempt to create a programming language and envirnoment that's designed to enable constructionist teaching. Most of the language's design and philosphy is based on [the LOGO programming language](https://en.wikipedia.org/wiki/Logo_(programming_language)).
+This is a (silly) attempt to create a programming language and environment that's designed to enable constructionist teaching. Most of the language's design and philosphy is based on [the LOGO programming language](https://en.wikipedia.org/wiki/Logo_(programming_language)).
 
 ## Building
 
@@ -24,4 +24,6 @@ $ npm run client
 
 Will start a live reloading dev server on ```localhost:3000```.
 
+## Status
 
+To check Work In Progress and TODOs, see [the project](https://github.com/Swendude/Tortoise/projects/1).
