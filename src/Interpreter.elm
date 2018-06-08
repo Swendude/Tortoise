@@ -10,6 +10,7 @@ import Tuple exposing (..)
 
 type CommandList
     = Error Parser.Error
+    | InitialState
     | CommandList
         { before : List Token
         , current : Token
@@ -85,6 +86,8 @@ stepCommand commandList =
                 , current = withDefault END (head cl.after)
                 , after = drop 1 cl.after
                 }
+        InitialState ->
+            commandList
 
 
 tortoiseDegrees : Int -> Int
@@ -197,6 +200,9 @@ runCommand state =
                 Err _ ->
                     Err ()
 
+        InitialState ->
+            Err ()
+
 
 isDone : State -> Bool
 isDone state =
@@ -210,4 +216,7 @@ isDone state =
                     False
 
         Error _ ->
+            True
+
+        InitialState ->
             True
