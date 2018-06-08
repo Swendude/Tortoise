@@ -43,17 +43,16 @@ type alias State =
     }
 
 
+defaultTortoiseWorld : TortoiseWorld
+defaultTortoiseWorld = TortoiseWorld ( 400, 400 ) ( 0, 0 ) 0 False ( 0, 0, 0 ) []
+
 initialize : String -> State
 initialize code =
     let
         parseResult =
-            --Debug.log code
             run
                 tortoiseParser
                 code
-
-        defaultTortoiseWorld =
-            TortoiseWorld ( 400, 400 ) ( 0, 0 ) 0 False ( 0, 0, 0 ) []
     in
     case parseResult of
         Ok commands ->

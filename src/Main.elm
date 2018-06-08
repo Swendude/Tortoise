@@ -35,11 +35,15 @@ init : ( Model, Cmd msg )
 init =
     ( Model
         ""
-        (initialize "")
+        (initialState)
     , Cmd.none
     )
 
-
+initialState : State
+initialState = { 
+    commandList = InitialState
+    , tortoiseWorld = defaultTortoiseWorld
+    }
 
 -- UPDATE
 
@@ -75,7 +79,7 @@ update msg model =
                 sanetizedInput =
                     String.toUpper model.input
             in
-            ( { model | input = sanetizedInput, interpreter = Interpreter.initialize sanetizedInput }, Cmd.none )
+                ( { model | input = sanetizedInput, interpreter = Interpreter.initialize sanetizedInput }, Cmd.none )
 
         StepInterpreter _ ->
             let
