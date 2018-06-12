@@ -106,15 +106,22 @@ view model =
             case model.interpreter.commandList of
                 Error val ->
                     Html.div [ htmlclass "col s12 center-align" ]
-                        (Html.h5 [] [ Html.text "Errors: " ]
+                        (Html.h5 [] [ Html.text ("Errors on " ++ printContexts val.context) ]
                             :: List.map (\problemstring -> Html.p [ htmlclass "red-text text-darken-2" ] [ Html.text problemstring ]) (printProblems val.problem)
                         )
 
                 CommandList cl ->
-                    Html.div [ htmlclass "col s12 center-align" ]
-                        (Html.h5 [] [ Html.text "Succes!: " ]
-                            :: List.map (\tokenstring -> Html.p [ htmlclass "green-text text-darken-2" ] [ Html.text tokenstring ]) (printTokens (cl.current :: cl.before))
-                        )
+                    case ( cl.before, cl.current ) of
+                        ( [], END ) ->
+                            Html.div [ htmlclass "col s12 center-align" ]
+                                [ Html.h5 [] [ Html.text "Waiting for input!" ]
+                                ]
+
+                        _ ->
+                            Html.div [ htmlclass "col s12 center-align" ]
+                                (Html.h5 [] [ Html.text "Success!" ]
+                                    :: List.map (\tokenstring -> Html.p [ htmlclass "green-text text-darken-2" ] [ Html.text tokenstring ]) (printTokens (cl.current :: cl.before))
+                                )
 
         turtleStatus =
             Html.div []

@@ -63,5 +63,19 @@ parserSuite =
                             "FORWARD  10\nLEFT\t90\nFORWARD \t10"
                     in
                     Expect.false "Expect the result to be Err" (isOk (run tortoiseParser input))
+            , test "Don't allow programs that don't use newlines for seperating commands" <|
+                \_ ->
+                    let
+                        input =
+                            "FORWARD 10 LEFT 90 FORWARD 10"
+                    in
+                    Expect.false "Expect the result to be Err" (isOk (run tortoiseParser input))
+            , test "Allow repeat functions" <|
+                \_ ->
+                    let
+                        input =
+                            "REPEAT 4 [\nLEFT 90\n]"
+                    in
+                    Expect.true "Expect the result to be Ok" (isOk (run tortoiseParser input))
             ]
         ]

@@ -22,7 +22,7 @@ type alias TortoiseLine =
     , y1 : Int
     , x2 : Int
     , y2 : Int
-    , color : ( Int, Int, Int )
+    , color : { r : Int, g : Int, b : Int }
     }
 
 
@@ -31,7 +31,7 @@ type alias TortoiseWorld =
     , position : ( Int, Int )
     , heading : Int
     , pendown : Bool
-    , color : ( Int, Int, Int )
+    , color : { r : Int, g : Int, b : Int }
     , lines : List TortoiseLine
     }
 
@@ -42,17 +42,18 @@ type alias State =
     }
 
 
+defaultTortoiseWorld : TortoiseWorld
+defaultTortoiseWorld =
+    TortoiseWorld ( 400, 400 ) ( 0, 0 ) 0 False { r = 0, g = 0, b = 0 } []
+
+
 initialize : String -> State
 initialize code =
     let
         parseResult =
-            --Debug.log code
             run
                 tortoiseParser
                 code
-
-        defaultTortoiseWorld =
-            TortoiseWorld ( 400, 400 ) ( 0, 0 ) 0 False ( 0, 0, 0 ) []
     in
     case parseResult of
         Ok commands ->
@@ -90,12 +91,6 @@ stepCommand commandList =
 tortoiseDegrees : Int -> Int
 tortoiseDegrees deg =
     (90 - deg) % 360
-
-
-
---radians : Float -> Float
---radians degree =
---    degree * pi / 180
 
 
 takeSteps : Int -> Int -> ( Int, Int ) -> ( Int, Int )
@@ -161,22 +156,36 @@ executeCommand world command =
             Ok { world | pendown = False }
 
         PENCOLOR r g b ->
-            Ok { world | color = ( r, g, b ) }
+            Ok { world | color = { r = r, g = g, b = b } }
 
         REPEAT c code ->
-            Ok world
+            List.foldl
+                repeatFolder
+                (Ok world)
+                (replicateList code c)
 
-        --let
-        --    executed_tw =
-        --        executeListOfCommands code world
-        --in
-        --case executed_tw of
-        --    Ok tw ->
-        --        Ok tw
-        --    Err () ->
-        --        Err ()
         END ->
             Ok world
+
+
+repeatFolder : Token -> Result () TortoiseWorld -> Result () TortoiseWorld
+repeatFolder t result =
+    case result of
+        Ok world ->
+            executeCommand world t
+
+        Err () ->
+            Err ()
+
+
+replicateList : List a -> Int -> List a
+replicateList list n =
+    case n of
+        0 ->
+            []
+
+        n ->
+            list ++ replicateList list (n - 1)
 
 
 runCommand : State -> Result () State
