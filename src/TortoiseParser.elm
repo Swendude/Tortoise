@@ -47,9 +47,13 @@ newLines =
 tortoiseParser : Parser (List Token)
 tortoiseParser =
     Parser.inContext "MAIN" <|
-        succeed Basics.identity
-            |= repeat oneOrMore tortoiseCommand
-            |. Parser.end
+        oneOf
+            [ succeed Basics.identity
+                |= repeat oneOrMore tortoiseCommand
+                |. Parser.end
+            , succeed []
+                |. Parser.end
+            ]
 
 
 tortoiseCommand : Parser Token
