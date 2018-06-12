@@ -22,7 +22,7 @@ type alias TortoiseLine =
     , y1 : Int
     , x2 : Int
     , y2 : Int
-    , color : ( Int, Int, Int )
+    , color : { r : Int, g : Int, b : Int }
     }
 
 
@@ -31,7 +31,7 @@ type alias TortoiseWorld =
     , position : ( Int, Int )
     , heading : Int
     , pendown : Bool
-    , color : ( Int, Int, Int )
+    , color : { r : Int, g : Int, b : Int }
     , lines : List TortoiseLine
     }
 
@@ -44,7 +44,7 @@ type alias State =
 
 defaultTortoiseWorld : TortoiseWorld
 defaultTortoiseWorld =
-    TortoiseWorld ( 400, 400 ) ( 0, 0 ) 0 False ( 0, 0, 0 ) []
+    TortoiseWorld ( 400, 400 ) ( 0, 0 ) 0 False { r = 0, g = 0, b = 0 } []
 
 
 initialize : String -> State
@@ -156,7 +156,7 @@ executeCommand world command =
             Ok { world | pendown = False }
 
         PENCOLOR r g b ->
-            Ok { world | color = ( r, g, b ) }
+            Ok { world | color = { r = r, g = g, b = b } }
 
         REPEAT c code ->
             Ok world

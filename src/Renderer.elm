@@ -158,7 +158,7 @@ renderLines tw =
                     , x2 (toString tl.x2)
                     , y2 (toString tl.y2)
                     , strokeWidth "1"
-                    , stroke "rgb(0,0,0)"
+                    , stroke ("rgb(" ++ toString tl.color.r ++ "," ++ toString tl.color.g ++ "," ++ toString tl.color.b ++ ")")
                     ]
                     []
             )
