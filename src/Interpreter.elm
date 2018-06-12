@@ -159,10 +159,33 @@ executeCommand world command =
             Ok { world | color = { r = r, g = g, b = b } }
 
         REPEAT c code ->
-            Ok world
+            List.foldl
+                repeatFolder
+                (Ok world)
+                (replicateList code c)
 
         END ->
             Ok world
+
+
+repeatFolder : Token -> Result () TortoiseWorld -> Result () TortoiseWorld
+repeatFolder t result =
+    case result of
+        Ok world ->
+            executeCommand world t
+
+        Err () ->
+            Err ()
+
+
+replicateList : List a -> Int -> List a
+replicateList list n =
+    case n of
+        0 ->
+            []
+
+        n ->
+            list ++ replicateList list (n - 1)
 
 
 runCommand : State -> Result () State
