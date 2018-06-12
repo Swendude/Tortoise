@@ -35,11 +35,15 @@ init : ( Model, Cmd msg )
 init =
     ( Model
         ""
-        (initialize "")
+        (initialState)
     , Cmd.none
     )
 
-
+initialState : State
+initialState = { 
+    commandList = InitialState
+    , tortoiseWorld = defaultTortoiseWorld
+    }
 
 -- UPDATE
 
@@ -75,7 +79,7 @@ update msg model =
                 sanetizedInput =
                     String.toUpper model.input
             in
-            ( { model | input = sanetizedInput, interpreter = Interpreter.initialize sanetizedInput }, Cmd.none )
+                ( { model | input = sanetizedInput, interpreter = Interpreter.initialize sanetizedInput }, Cmd.none )
 
         StepInterpreter _ ->
             let
@@ -112,9 +116,14 @@ view model =
 
                 CommandList cl ->
                     Html.div [ htmlclass "col s12 center-align" ]
-                        (Html.h5 [] [ Html.text "Succes!: " ]
+                        (Html.h5 [] [ Html.text "Success!" ]
                             :: List.map (\tokenstring -> Html.p [ htmlclass "green-text text-darken-2" ] [ Html.text tokenstring ]) (printTokens (cl.current :: cl.before))
                         )
+
+                InitialState ->
+                    Html.div [ htmlclass "col s12 center-align" ] [
+                        Html.text "Ready to start evaluating!" 
+                    ]
 
         turtleStatus =
             Html.div []

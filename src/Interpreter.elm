@@ -10,6 +10,7 @@ import Tuple exposing (..)
 
 type CommandList
     = Error Parser.Error
+    | InitialState
     | CommandList
         { before : List Token
         , current : Token
@@ -42,17 +43,16 @@ type alias State =
     }
 
 
+defaultTortoiseWorld : TortoiseWorld
+defaultTortoiseWorld = TortoiseWorld ( 400, 400 ) ( 0, 0 ) 0 False ( 0, 0, 0 ) []
+
 initialize : String -> State
 initialize code =
     let
         parseResult =
-            --Debug.log code
             run
                 tortoiseParser
                 code
-
-        defaultTortoiseWorld =
-            TortoiseWorld ( 400, 400 ) ( 0, 0 ) 0 False ( 0, 0, 0 ) []
     in
     case parseResult of
         Ok commands ->
@@ -85,6 +85,8 @@ stepCommand commandList =
                 , current = withDefault END (head cl.after)
                 , after = drop 1 cl.after
                 }
+        InitialState ->
+            commandList
 
 
 tortoiseDegrees : Int -> Int
@@ -197,6 +199,9 @@ runCommand state =
                 Err _ ->
                     Err ()
 
+        InitialState ->
+            Err ()
+
 
 isDone : State -> Bool
 isDone state =
@@ -210,4 +215,7 @@ isDone state =
                     False
 
         Error _ ->
+            True
+
+        InitialState ->
             True
