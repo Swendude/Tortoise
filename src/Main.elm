@@ -118,9 +118,10 @@ view model =
                                 ]
 
                         _ ->
-                            Html.div [ htmlclass "col s12 center-align" ]
+                            Html.div
+                                [ htmlclass "col s12 center-align" ]
                                 (Html.h5 [] [ Html.text "Success!" ]
-                                    :: List.map (\tokenstring -> Html.p [ htmlclass "green-text text-darken-2" ] [ Html.text tokenstring ]) (printTokens (cl.current :: cl.before))
+                                    :: List.map (\tokenstring -> Html.p [ htmlclass "green-text text-darken-2" ] [ Html.text tokenstring ]) (printTokens (append cl.before [ cl.current ]))
                                 )
 
         turtleStatus =

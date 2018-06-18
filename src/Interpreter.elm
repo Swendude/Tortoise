@@ -1,6 +1,7 @@
 module Interpreter exposing (..)
 
 import Debug exposing (..)
+import Graphbuilder exposing (buildGraph)
 import List exposing (..)
 import Maybe exposing (..)
 import Parser exposing (..)
@@ -64,7 +65,8 @@ initialize code =
                         defaultTortoiseWorld
 
                 head :: tail ->
-                    State
+                    Debug.log (Graphbuilder.printGraph (head :: tail))
+                        State
                         (CommandList { before = [], current = head, after = tail })
                         defaultTortoiseWorld
 
@@ -158,34 +160,14 @@ executeCommand world command =
         PENCOLOR r g b ->
             Ok { world | color = { r = r, g = g, b = b } }
 
-        REPEAT c code ->
-            List.foldl
-                repeatFolder
-                (Ok world)
-                (replicateList code c)
+        REPEAT_start c ->
+            Ok world
+
+        REPEAT_end ->
+            Ok world
 
         END ->
             Ok world
-
-
-repeatFolder : Token -> Result () TortoiseWorld -> Result () TortoiseWorld
-repeatFolder t result =
-    case result of
-        Ok world ->
-            executeCommand world t
-
-        Err () ->
-            Err ()
-
-
-replicateList : List a -> Int -> List a
-replicateList list n =
-    case n of
-        0 ->
-            []
-
-        n ->
-            list ++ replicateList list (n - 1)
 
 
 runCommand : State -> Result () State
