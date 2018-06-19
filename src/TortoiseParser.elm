@@ -11,8 +11,42 @@ type Token
     | PENUP
     | PENDOWN
     | PENCOLOR Int Int Int
-    | REPEAT Int (List Token)
+    | REPEAT_start Int
+    | REPEAT_end
     | END
+
+
+tortoiseParser : Parser (List Token)
+tortoiseParser =
+    Parser.inContext "MAIN" <|
+        --oneOf
+        --    [
+        succeed Basics.identity
+            |= repeat oneOrMore tortoiseCommand
+            |. Parser.end
+
+
+
+--, succeed []
+--    |. Parser.end
+--]
+
+
+tortoiseCommand : Parser Token
+tortoiseCommand =
+    Parser.inContext "COMMAND" <|
+        oneOf
+            [ forwardParser
+            , leftParser
+            , rightParser
+            , pendownParser
+            , penupParser
+            , pencolorParser
+            , repeatStartParser
+            , repeatEndParser
+            ]
+            |. zeroOrMoreWhitespace
+            |. oneOf [ Parser.end, newLines ]
 
 
 spaces : Parser ()
@@ -44,45 +78,21 @@ newLines =
         ignore Parser.oneOrMore ((==) '\n')
 
 
-tortoiseParser : Parser (List Token)
-tortoiseParser =
-    Parser.inContext "MAIN" <|
-        oneOf
-            [ succeed Basics.identity
-                |= repeat oneOrMore tortoiseCommand
-                |. Parser.end
-            , succeed []
-                |. Parser.end
-            ]
-
-
-tortoiseCommand : Parser Token
-tortoiseCommand =
-    Parser.inContext "COMMAND" <|
-        oneOf
-            [ forwardParser
-            , leftParser
-            , rightParser
-            , pendownParser
-            , penupParser
-            , pencolorParser
-            , lazy (\_ -> repeatParser)
-            ]
-            |. zeroOrMoreWhitespace
-            |. oneOf [ newLines, Parser.end ]
-
-
-repeatParser : Parser Token
-repeatParser =
-    Parser.inContext "REPEAT" <|
-        succeed REPEAT
+repeatStartParser : Parser Token
+repeatStartParser =
+    Parser.inContext "REPEAT_start" <|
+        succeed REPEAT_start
             |. keyword "REPEAT"
             |. spaces
             |= int
             |. spaces
             |. Parser.symbol "["
-            |. newLines
-            |= lazy (\_ -> Parser.repeat oneOrMore tortoiseCommand)
+
+
+repeatEndParser : Parser Token
+repeatEndParser =
+    Parser.inContext "REPEAT_end" <|
+        succeed REPEAT_end
             |. Parser.symbol "]"
 
 
@@ -170,8 +180,11 @@ tokenToText token =
         PENCOLOR r g b ->
             "PENCOLOR " ++ toString r ++ " " ++ toString g ++ " " ++ toString b
 
-        REPEAT c code ->
-            "REPEAT [ " ++ String.join "\n" (List.map tokenToText code) ++ " ]"
+        REPEAT_start c ->
+            "REPEAT " ++ toString c ++ " ["
+
+        REPEAT_end ->
+            "]"
 
         END ->
             "END"

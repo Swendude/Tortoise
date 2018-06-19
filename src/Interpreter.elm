@@ -1,6 +1,7 @@
 module Interpreter exposing (..)
 
 import Debug exposing (..)
+import IntDict exposing (..)
 import List exposing (..)
 import Maybe exposing (..)
 import Parser exposing (..)
@@ -8,12 +9,19 @@ import TortoiseParser exposing (..)
 import Tuple exposing (..)
 
 
-type CommandList
+type ControlToken
+    = Repeat
+        { iter : Int
+        , return : Int
+        }
+
+
+type StateControl
     = Error Parser.Error
-    | CommandList
-        { before : List Token
-        , current : Token
-        , after : List Token
+    | StateControl
+        { code : IntDict Token
+        , pc : Int
+        , stack : List ControlToken
         }
 
 
@@ -37,7 +45,7 @@ type alias TortoiseWorld =
 
 
 type alias State =
-    { commandList : CommandList
+    { stateControl : StateControl
     , tortoiseWorld : TortoiseWorld
     }
 
@@ -56,17 +64,20 @@ initialize code =
                 code
     in
     case parseResult of
-        Ok commands ->
-            case commands of
-                [] ->
-                    State
-                        (CommandList { before = [], current = END, after = [] })
-                        defaultTortoiseWorld
+        Ok tokenList ->
+            let
+                indices =
+                    List.range 0 (List.length tokenList)
 
-                head :: tail ->
-                    State
-                        (CommandList { before = [], current = head, after = tail })
-                        defaultTortoiseWorld
+                enumerated =
+                    List.map2 (,) indices tokenList
+
+                indexed =
+                    IntDict.fromList enumerated
+            in
+            State
+                (StateControl { code = indexed, pc = 0, stack = [] })
+                defaultTortoiseWorld
 
         Err parserError ->
             State
@@ -74,18 +85,14 @@ initialize code =
                 defaultTortoiseWorld
 
 
-stepCommand : CommandList -> CommandList
-stepCommand commandList =
-    case commandList of
+stepCommand : StateControl -> StateControl
+stepCommand stateControl =
+    case stateControl of
         Error _ ->
-            commandList
+            stateControl
 
-        CommandList cl ->
-            CommandList
-                { before = append cl.before [ cl.current ]
-                , current = withDefault END (head cl.after)
-                , after = drop 1 cl.after
-                }
+        StateControl cl ->
+            StateControl { cl | pc = cl.pc + 1 }
 
 
 tortoiseDegrees : Int -> Int
@@ -100,123 +107,102 @@ takeSteps steps heading oldpos =
     )
 
 
-executeListOfCommands : List Token -> TortoiseWorld -> Result () TortoiseWorld
-executeListOfCommands code tw =
-    case code of
-        [] ->
-            Ok tw
-
-        first :: rest ->
+executeCommand : State -> Result () State
+executeCommand state =
+    case state.stateControl of
+        StateControl stateControl ->
             let
-                result =
-                    executeCommand tw first
+                currentCommand =
+                    (Maybe.withDefault END << IntDict.get stateControl.pc) stateControl.code
+
+                tortoiseWorld =
+                    state.tortoiseWorld
             in
-            case result of
-                Ok tw ->
-                    executeListOfCommands rest tw
+            case currentCommand of
+                FORWARD n ->
+                    let
+                        newPos =
+                            takeSteps n tortoiseWorld.heading tortoiseWorld.position
 
-                Err () ->
-                    Err ()
+                        newLines =
+                            case tortoiseWorld.pendown of
+                                True ->
+                                    tortoiseWorld.lines
+                                        ++ [ TortoiseLine (first tortoiseWorld.position)
+                                                (second tortoiseWorld.position)
+                                                (first newPos)
+                                                (second newPos)
+                                                tortoiseWorld.color
+                                           ]
 
+                                False ->
+                                    tortoiseWorld.lines
+                    in
+                    Ok (State (StateControl { stateControl | pc = stateControl.pc + 1 }) { tortoiseWorld | position = newPos, lines = newLines })
 
-executeCommand : TortoiseWorld -> Token -> Result () TortoiseWorld
-executeCommand world command =
-    case command of
-        FORWARD n ->
-            let
-                newPos =
-                    takeSteps n world.heading world.position
+                LEFT n ->
+                    Ok (State (StateControl { stateControl | pc = stateControl.pc + 1 }) { tortoiseWorld | heading = tortoiseWorld.heading - n })
 
-                newLines =
-                    case world.pendown of
-                        True ->
-                            world.lines
-                                ++ [ TortoiseLine (first world.position)
-                                        (second world.position)
-                                        (first newPos)
-                                        (second newPos)
-                                        world.color
-                                   ]
+                RIGHT n ->
+                    Ok (State (StateControl { stateControl | pc = stateControl.pc + 1 }) { tortoiseWorld | heading = tortoiseWorld.heading + n })
 
-                        False ->
-                            world.lines
-            in
-            Ok { world | position = newPos, lines = newLines }
+                PENDOWN ->
+                    Ok (State (StateControl { stateControl | pc = stateControl.pc + 1 }) { tortoiseWorld | pendown = True })
 
-        LEFT n ->
-            Ok { world | heading = world.heading - n }
+                PENUP ->
+                    Ok (State (StateControl { stateControl | pc = stateControl.pc + 1 }) { tortoiseWorld | pendown = False })
 
-        RIGHT n ->
-            Ok { world | heading = world.heading + n }
+                PENCOLOR r g b ->
+                    Ok (State (StateControl { stateControl | pc = stateControl.pc + 1 }) { tortoiseWorld | color = { r = r, g = g, b = b } })
 
-        PENDOWN ->
-            Ok { world | pendown = True }
+                REPEAT_start c ->
+                    Ok (State (StateControl { stateControl | pc = stateControl.pc + 1 }) tortoiseWorld)
 
-        PENUP ->
-            Ok { world | pendown = False }
+                REPEAT_end ->
+                    Ok (State (StateControl { stateControl | pc = stateControl.pc + 1 }) tortoiseWorld)
 
-        PENCOLOR r g b ->
-            Ok { world | color = { r = r, g = g, b = b } }
+                END ->
+                    Ok (State (StateControl stateControl) tortoiseWorld)
 
-        REPEAT c code ->
-            List.foldl
-                repeatFolder
-                (Ok world)
-                (replicateList code c)
-
-        END ->
-            Ok world
-
-
-repeatFolder : Token -> Result () TortoiseWorld -> Result () TortoiseWorld
-repeatFolder t result =
-    case result of
-        Ok world ->
-            executeCommand world t
-
-        Err () ->
+        Error error ->
             Err ()
 
 
-replicateList : List a -> Int -> List a
-replicateList list n =
-    case n of
-        0 ->
-            []
 
-        n ->
-            list ++ replicateList list (n - 1)
+--repeatFolder : Token -> Result () TortoiseWorld -> Result () TortoiseWorld
+--repeatFolder t result =
+--    case result of
+--        Ok world ->
+--            executeCommand world t
+--        Err () ->
+--            Err ()
+--replicateList : List a -> Int -> List a
+--replicateList list n =
+--    case n of
+--        0 ->
+--            []
+--        n ->
+--            list ++ replicateList list (n - 1)
 
 
 runCommand : State -> Result () State
 runCommand state =
-    case state.commandList of
+    case state.stateControl of
         Error _ ->
             Err ()
 
-        CommandList cl ->
-            let
-                runResult =
-                    executeCommand state.tortoiseWorld cl.current
-            in
-            case runResult of
-                Ok resultWorld ->
-                    Ok (State (stepCommand state.commandList) resultWorld)
-
-                Err _ ->
-                    Err ()
+        StateControl cl ->
+            executeCommand state
 
 
 isDone : State -> Bool
 isDone state =
-    case state.commandList of
-        CommandList cl ->
-            case cl.current of
-                END ->
-                    True
-
-                _ ->
-                    False
+    case state.stateControl of
+        StateControl cl ->
+            if cl.pc > (length << IntDict.toList) cl.code then
+                True
+            else
+                False
 
         Error _ ->
             True
