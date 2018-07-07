@@ -9,11 +9,9 @@ import TortoiseParser exposing (..)
 import Tuple exposing (..)
 
 
-type ControlToken
-    = Repeat
-        { iter : Int
-        , return : Int
-        }
+type ControlFrame
+    = RepeatFound Int Int
+    | RepeatClosed Int Int Int
 
 
 type StateControl
@@ -21,7 +19,7 @@ type StateControl
     | StateControl
         { code : IntDict Token
         , pc : Int
-        , stack : List ControlToken
+        , stack : List ControlFrame
         }
 
 
@@ -156,10 +154,23 @@ executeCommand state =
                     Ok (State (StateControl { stateControl | pc = stateControl.pc + 1 }) { tortoiseWorld | color = { r = r, g = g, b = b } })
 
                 REPEAT_start c ->
-                    Ok (State (StateControl { stateControl | pc = stateControl.pc + 1 }) tortoiseWorld)
+                    Ok (State (StateControl { stateControl | pc = stateControl.pc + 1, stack = RepeatFound (c - 1) (stateControl.pc + 1) :: stateControl.stack }) tortoiseWorld)
 
                 REPEAT_end ->
-                    Ok (State (StateControl { stateControl | pc = stateControl.pc + 1 }) tortoiseWorld)
+                    case head stateControl.stack of
+                        Just (RepeatFound c start_ln) ->
+                            Ok (State (StateControl { stateControl | pc = start_ln, stack = RepeatClosed (c - 1) start_ln stateControl.pc :: Maybe.withDefault [] (tail stateControl.stack) }) tortoiseWorld)
+
+                        Just (RepeatClosed c start_ln _) ->
+                            case c of
+                                0 ->
+                                    Ok (State (StateControl { stateControl | pc = stateControl.pc + 1, stack = Maybe.withDefault [] (tail stateControl.stack) }) tortoiseWorld)
+
+                                c ->
+                                    Ok (State (StateControl { stateControl | pc = start_ln, stack = RepeatClosed (c - 1) start_ln stateControl.pc :: Maybe.withDefault [] (tail stateControl.stack) }) tortoiseWorld)
+
+                        Nothing ->
+                            Err ()
 
                 END ->
                     Ok (State (StateControl stateControl) tortoiseWorld)
