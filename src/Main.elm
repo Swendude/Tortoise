@@ -28,6 +28,7 @@ type alias Vector =
 type alias Model =
     { input : String
     , interpreter : State
+    , speed : Float
     }
 
 
@@ -36,6 +37,7 @@ init =
     ( Model
         ""
         (initialize "")
+        10
     , Cmd.none
     )
 
@@ -177,4 +179,4 @@ subscription model =
     if isDone model.interpreter then
         Sub.none
     else
-        Time.every second StepInterpreter
+        Time.every (model.speed * millisecond) StepInterpreter

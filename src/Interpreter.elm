@@ -173,7 +173,12 @@ executeCommand state =
                             Err ()
 
                 END ->
-                    Ok (State (StateControl stateControl) tortoiseWorld)
+                    case head stateControl.stack of
+                        Just _ ->
+                            Err ()
+
+                        Nothing ->
+                            Ok (State (StateControl stateControl) tortoiseWorld)
 
         Error error ->
             Err ()
