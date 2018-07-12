@@ -28,6 +28,7 @@ type alias Vector =
 type alias Model =
     { input : String
     , interpreter : State
+    , speed : Float
     }
 
 
@@ -36,6 +37,7 @@ init =
     ( Model
         ""
         (initialize "")
+        10
     , Cmd.none
     )
 
@@ -103,25 +105,25 @@ view : Model -> Html Msg
 view model =
     let
         output =
-            case model.interpreter.commandList of
+            case model.interpreter.stateControl of
                 Error val ->
                     Html.div [ htmlclass "col s12 center-align" ]
                         (Html.h5 [] [ Html.text ("Errors on " ++ printContexts val.context) ]
                             :: List.map (\problemstring -> Html.p [ htmlclass "red-text text-darken-2" ] [ Html.text problemstring ]) (printProblems val.problem)
                         )
 
-                CommandList cl ->
-                    case ( cl.before, cl.current ) of
-                        ( [], END ) ->
-                            Html.div [ htmlclass "col s12 center-align" ]
-                                [ Html.h5 [] [ Html.text "Waiting for input!" ]
-                                ]
+                StateControl stateControl ->
+                    --case ( cl.before, cl.current ) of
+                    --    ( [], END ) ->
+                    --        Html.div [ htmlclass "col s12 center-align" ]
+                    --            [ Html.h5 [] [ Html.text "Waiting for input!" ]
+                    --            ]
+                    --    _ ->
+                    Html.div [ htmlclass "col s12 center-align" ]
+                        [ Html.h5 [] [ Html.text "Success!" ]
 
-                        _ ->
-                            Html.div [ htmlclass "col s12 center-align" ]
-                                (Html.h5 [] [ Html.text "Success!" ]
-                                    :: List.map (\tokenstring -> Html.p [ htmlclass "green-text text-darken-2" ] [ Html.text tokenstring ]) (printTokens (cl.current :: cl.before))
-                                )
+                        --:: List.map (\tokenstring -> Html.p [ htmlclass "green-text text-darken-2" ] [ Html.text tokenstring ]) (printTokens (cl.current :: cl.before))
+                        ]
 
         turtleStatus =
             Html.div []
@@ -177,4 +179,4 @@ subscription model =
     if isDone model.interpreter then
         Sub.none
     else
-        Time.every second StepInterpreter
+        Time.every (model.speed * millisecond) StepInterpreter
