@@ -70,3 +70,6 @@ elm-stuff
 repl-temp-*
 
 yarn.lock
+
+# assets
+/assets

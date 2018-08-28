@@ -5,24 +5,25 @@
   "private": true,
   "homepage": "https://swendude.github.io/Tortoise/",
   "dependencies": {},
-  "bugs": { 
-    "url" : "https://github.com/Swendude/Tortoise/issues"
+  "bugs": {
+    "url": "https://github.com/Swendude/Tortoise/issues"
   },
-  "repository" :{ 
-      "type" : "git"
-    , "url" : "git@github.com:Swendude/Tortoise.git"
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:Swendude/Tortoise.git"
   },
   "devDependencies": {
-    "webpack": "^4.3.0",
-    "webpack-cli": "^2.0.13",
     "css-loader": "^0.28.11",
+    "elm": "^0.18.0-exp5",
     "elm-webpack-loader": "^4.5.0",
     "file-loader": "^1.1.11",
     "materialize-css": "^0.100.2",
+    "push-dir": "^0.4.1",
     "style-loader": "^0.20.3",
     "url-loader": "^1.0.1",
-    "webpack-dev-server": "^3.1.1",
-    "push-dir": "^0.4.1"
+    "webpack": "^4.3.0",
+    "webpack-cli": "^2.0.13",
+    "webpack-dev-server": "^3.1.1"
   },
   "scripts": {
     "build": "webpack --mode=production",

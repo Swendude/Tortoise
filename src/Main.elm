@@ -1,5 +1,7 @@
-module Main exposing (..)
+module Main exposing (Model, Msg(..), Styles(..), Vector, ignoreLast, init, main, stylesheet, subscription, update, view)
 
+import Color exposing (..)
+import Dict exposing (..)
 import Element exposing (..)
 import Element.Attributes exposing (..)
 import Html exposing (..)
@@ -14,6 +16,7 @@ import Style exposing (..)
 import Style.Border as Border
 import Style.Color as Color
 import Style.Font as Font
+import Style.Shadow as Shadow
 import Style.Transition as Transition
 import Time exposing (..)
 import TortoiseParser exposing (..)
@@ -106,12 +109,47 @@ update msg model =
 
 type Styles
     = None
+    | HeaderBar
+    | TitelText
+
+
+
+-- https://material.io/design/color/the-color-system.html#tools-for-picking-colors
+-- P:262776
+-- rgba 38 39 118 1
+-- colorsheet : Dict String Color
+-- colorsheet =
+--     Dict.fromList
+--         [ ( "Blue-900", Color.rgb 38 39 118 )
+--         , ( "Blue-700", Color.rgb 58 66 152 )
+--         ]
+
+
+colorsheet =
+    { blue_900 = Color.rgb 38 39 118
+    , blue_700 = Color.rgb 58 66 152
+    }
 
 
 stylesheet : Style.StyleSheet Styles variation
 stylesheet =
     Style.styleSheet
-        [ Style.style None []
+        [ Style.style HeaderBar
+            [ Color.background colorsheet.blue_900
+            , Shadow.box
+                { offset = ( 0, 0 )
+                , size = 2
+                , blur = 2
+                , color = colorsheet.blue_700
+                }
+            ]
+        , Style.style TitelText
+            [ Color.text white
+            , Font.size 25
+            , Font.typeface [ Font.font "Helvetica" ]
+            , Font.light
+            ]
+        , Style.style None []
         ]
 
 
@@ -136,17 +174,12 @@ view model =
             , cells =
                 [ cell
                     { start = ( 0, 0 )
-                    , width = 1
+                    , width = 5
                     , height = 1
                     , content =
-                        el None [] (Element.h1 None [] <| Element.text "Tortoise")
-                    }
-                , cell
-                    { start = ( 1, 1 )
-                    , width = 1
-                    , height = 2
-                    , content =
-                        el None [] (Element.text "box")
+                        row HeaderBar
+                            [ padding 40, verticalCenter ]
+                            [ Element.h1 TitelText [] <| Element.text "Tortoise" ]
                     }
                 ]
             }
@@ -223,5 +256,6 @@ subscription : Model -> Sub Msg
 subscription model =
     if isDone model.interpreter then
         Sub.none
+
     else
         Time.every (model.speed * millisecond) StepInterpreter
