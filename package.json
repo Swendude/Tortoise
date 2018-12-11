@@ -4,7 +4,10 @@
   "description": "This is a (silly) attempt to create a programming language and envirnoment that's designed to enable constructionist teaching.",
   "private": true,
   "homepage": "https://swendude.github.io/Tortoise/",
-  "dependencies": {},
+  "dependencies": {
+    "elm-analyse": "^0.15.0",
+    "elm-format": "^0.8.0"
+  },
   "bugs": {
     "url": "https://github.com/Swendude/Tortoise/issues"
   },

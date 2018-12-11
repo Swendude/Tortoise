@@ -1,12 +1,9 @@
 module Main exposing (Model, Msg(..), Styles(..), Vector, ignoreLast, init, main, stylesheet, subscription, update, view)
 
 import Color exposing (..)
-import Dict exposing (..)
 import Element exposing (..)
 import Element.Attributes exposing (..)
 import Html exposing (..)
-import Html.Attributes exposing (..)
-import Html.Events exposing (onClick, onInput)
 import Interpreter exposing (..)
 import List exposing (append, head, length, map, tail, take)
 import Parser exposing (Error)
@@ -110,6 +107,7 @@ update msg model =
 type Styles
     = None
     | HeaderBar
+    | WorldScreen
     | TitelText
 
 
@@ -149,6 +147,7 @@ stylesheet =
             , Font.typeface [ Font.font "Helvetica" ]
             , Font.light
             ]
+        , Style.style WorldScreen []
         , Style.style None []
         ]
 
@@ -166,10 +165,11 @@ view model =
                 , Element.Attributes.percent 20
                 ]
             , rows =
-                [ Element.Attributes.percent 10
-                , Element.Attributes.percent 5
-                , Element.Attributes.percent 70
-                , Element.Attributes.percent 15
+                [ Element.Attributes.percent 20
+                , Element.Attributes.percent 20
+                , Element.Attributes.percent 20
+                , Element.Attributes.percent 20
+                , Element.Attributes.percent 20
                 ]
             , cells =
                 [ cell
@@ -180,6 +180,13 @@ view model =
                         row HeaderBar
                             [ padding 40, verticalCenter ]
                             [ Element.h1 TitelText [] <| Element.text "Tortoise" ]
+                    }
+                , cell
+                    { start = ( 0, 1 )
+                    , width = 3
+                    , height = 3
+                    , content =
+                        Element.el WorldScreen [] <| Element.h1 None [] <| Element.text "WS"
                     }
                 ]
             }
