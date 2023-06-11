@@ -1,81 +1,49 @@
 module ParserTests exposing (..)
 
 import Expect exposing (Expectation)
-import Fuzz exposing (Fuzzer, int, list, string)
 import Parser exposing (run)
 import Test exposing (..)
-import TortoiseParser exposing (tortoiseParser)
+import TortoiseParser exposing (Token(..), tortoiseParser)
+import Utils.DeadEndRenderer exposing (deadEndsToString)
 
 
-isOk : Result error value -> Bool
-isOk res =
-    case res of
-        Ok _ ->
-            True
-
-        Err _ ->
-            False
-
-
-parserSuite : Test
-parserSuite =
-    describe "The Parser module"
-        [ describe "Test the parser for the validity Tortoise programs regarding whitespace"
-            [ test "Allows simple programs" <|
-                \_ ->
-                    let
-                        input =
-                            "FORWARD 10\nLEFT 90\nFORWARD 10"
-                    in
-                    Expect.true "Expect the result to be Ok" (isOk (run tortoiseParser input))
-            , test "Allow arbitrary spaces after command" <|
-                \_ ->
-                    let
-                        input =
-                            "FORWARD 10  \nLEFT 90          \nLEFT 40\nFORWARD 20\nFORWARD 80"
-                    in
-                    Expect.true "Expect the result to be Ok" (isOk (run tortoiseParser input))
-            , test "Don't allow arbitrary spaces before command" <|
-                \_ ->
-                    let
-                        input =
-                            "    FORWARD 10\nLEFT 90\nFORWARD 10"
-                    in
-                    Expect.false "Expect the result to be Err" (isOk (run tortoiseParser input))
-            , test "Allow arbitrary tabs after command" <|
-                \_ ->
-                    let
-                        input =
-                            "FORWARD 10\t\t\t\nLEFT 90\nFORWARD 10"
-                    in
-                    Expect.true "Expect the result to be Ok" (isOk (run tortoiseParser input))
-            , test "Allow arbitrary mixes of tabs & spaces after command" <|
-                \_ ->
-                    let
-                        input =
-                            "FORWARD 10\t    \t \t\nLEFT 90  \t\t \nFORWARD 10 \t \t \t"
-                    in
-                    Expect.true "Expect the result to be Ok" (isOk (run tortoiseParser input))
-            , test "Don't allow arbitrary whitespace between command and argument" <|
-                \_ ->
-                    let
-                        input =
-                            "FORWARD  10\nLEFT\t90\nFORWARD \t10"
-                    in
-                    Expect.false "Expect the result to be Err" (isOk (run tortoiseParser input))
-            , test "Don't allow programs that don't use newlines for seperating commands" <|
-                \_ ->
-                    let
-                        input =
-                            "FORWARD 10 LEFT 90 FORWARD 10"
-                    in
-                    Expect.false "Expect the result to be Err" (isOk (run tortoiseParser input))
-            , test "Allow repeat functions" <|
-                \_ ->
-                    let
-                        input =
-                            "REPEAT 4 [\nLEFT 90\n]"
-                    in
-                    Expect.true "Expect the result to be Ok" (isOk (run tortoiseParser input))
+suite : Test
+suite =
+    describe "The Parser" <|
+        [ describe "Single commands"
+            [ test "Parses single FORWARD command" <|
+                \_ -> testScript "FORWARD 10" [ FORWARD 10 ]
+            , test "Parses single FORWARD command with multiple spaces" <|
+                \_ -> testScript "FORWARD      10" [ FORWARD 10 ]
+            , test "Parses single LEFT command" <|
+                \_ -> testScript "LEFT 45" [ LEFT 45 ]
+            , test "Parses single LEFT command with trailing spaces" <|
+                \_ -> testScript "LEFT 70    " [ LEFT 70 ]
+            , test "Parses single RIGHT command" <|
+                \_ -> testScript "RIGHT 45" [ RIGHT 45 ]
+            , test "Parses single PENUP command with whitspace" <|
+                \_ -> testScript "   PENUP " [ PENUP ]
+            , test "Parses single PENDOWN command" <|
+                \_ -> testScript "PENDOWN" [ PENDOWN ]
+            ]
+        , describe "SCRIPTS"
+            [ test "Parses script" <|
+                \_ -> testScript "FORWARD 10\nFORWARD 20" [ FORWARD 10, FORWARD 20 ]
+            , test "Parses script with whitespace " <|
+                \_ -> testScript "  FORWARD 10  \n FORWARD 20   \n\n LEFT 25 " [ FORWARD 10, FORWARD 20, LEFT 25 ]
             ]
         ]
+
+
+testScript : String -> List Token -> Expectation
+testScript inp exp =
+    let
+        parsed =
+            run tortoiseParser inp
+    in
+    case parsed of
+        Ok result ->
+            Expect.equal result exp
+
+        Err des ->
+            Expect.fail <| deadEndsToString des
