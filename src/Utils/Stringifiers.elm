@@ -1,6 +1,38 @@
-module Utils.DeadEndRenderer exposing (deadEndsToString)
+module Utils.Stringifiers exposing (deadEndsToString, tokensToString)
 
 import Parser exposing (DeadEnd, Problem(..))
+import String exposing (fromInt)
+import Utils.AST exposing (Token(..))
+
+
+tokensToString : List Token -> String
+tokensToString tokens =
+    String.concat (List.intersperse "; " (List.map tokenToString tokens))
+
+
+tokenToString : Token -> String
+tokenToString t =
+    case t of
+        LEFT n ->
+            "LEFT" ++ fromInt n
+
+        RIGHT n ->
+            "RIGHT" ++ fromInt n
+
+        PENUP ->
+            "PENUP"
+
+        PENDOWN ->
+            "PENDOWN"
+
+        REPEAT_start n ->
+            "REPEAT" ++ fromInt n
+
+        REPEAT_end ->
+            "REPEAT_END"
+
+        FORWARD n ->
+            "FORWARD " ++ fromInt n
 
 
 deadEndsToString : List DeadEnd -> String

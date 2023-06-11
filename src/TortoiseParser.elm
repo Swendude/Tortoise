@@ -1,18 +1,13 @@
-module TortoiseParser exposing (Token(..), tortoiseParser)
+module TortoiseParser exposing (parse, tortoiseParser)
 
-import Parser exposing ((|.), (|=), Parser, Step(..), Trailing(..), chompIf, chompWhile, end, int, keyword, loop, map, oneOf, sequence, spaces, succeed)
+import Parser exposing ((|.), (|=), Parser, Step(..), Trailing(..), chompIf, chompWhile, end, int, keyword, loop, map, oneOf, run, sequence, spaces, succeed)
+import Utils.AST exposing (Token(..))
+import Utils.Stringifiers exposing (deadEndsToString)
 
 
-type Token
-    = FORWARD Int
-    | LEFT Int
-    | RIGHT Int
-    | PENUP
-    | PENDOWN
-      -- | PENCOLOR Int Int Int
-      -- | REPEAT_start Int
-      -- | REPEAT_end
-    | END
+parse : String -> Result String (List Token)
+parse inp =
+    Result.mapError deadEndsToString <| run tortoiseParser inp
 
 
 tortoiseParser : Parser (List Token)
@@ -33,6 +28,8 @@ statementsHelp revStmts =
                 [ singleArgCommand "FORWARD" FORWARD
                 , singleArgCommand "LEFT" LEFT
                 , singleArgCommand "RIGHT" RIGHT
+                , singleArgCommand "REPEAT" REPEAT_start
+                , noArgCommand "ENDREPEAT" REPEAT_end
                 , noArgCommand "PENUP" PENUP
                 , noArgCommand "PENDOWN" PENDOWN
                 ]

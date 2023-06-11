@@ -3,7 +3,9 @@ module Main exposing (..)
 import Browser
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (onClick)
+import Html.Events exposing (onClick, onInput)
+import TortoiseParser exposing (parse)
+import Utils.Stringifiers exposing (tokensToString)
 
 
 main =
@@ -24,14 +26,16 @@ subscriptions model =
 
 
 type alias Model =
-    { message : String
+    { code : String
+    , result : Maybe (Result String String)
     }
 
 
 init : () -> ( Model, Cmd Msg )
 init _ =
     ( Model
-        "Boe"
+        ""
+        Nothing
     , Cmd.none
     )
 
@@ -41,14 +45,18 @@ init _ =
 
 
 type Msg
-    = Change String
+    = UpdateCode String
+    | ParseCode
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        Change s ->
-            ( { model | message = s }, Cmd.none )
+        UpdateCode s ->
+            ( { model | code = s }, Cmd.none )
+
+        ParseCode ->
+            ( { model | result = Just <| Result.map tokensToString (parse model.code) }, Cmd.none )
 
 
 
@@ -58,6 +66,28 @@ update msg model =
 view : Model -> Html Msg
 view model =
     div []
-        [ p [] [ text model.message ]
-        , button [ onClick <| Change "Hello" ] [ text "Hello" ]
+        [ textarea
+            [ onInput UpdateCode
+            , value model.code
+            , rows 20
+            , cols 60
+            ]
+            []
+        , button [ onClick ParseCode ] [ text "parse" ]
+        , outputView model.result
         ]
+
+
+outputView : Maybe (Result String String) -> Html Msg
+outputView maybeResult =
+    case maybeResult of
+        Just result ->
+            case result of
+                Ok res ->
+                    p [] [ text res ]
+
+                Err err ->
+                    p [] [ text err ]
+
+        Nothing ->
+            p [] []

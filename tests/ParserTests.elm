@@ -3,8 +3,9 @@ module ParserTests exposing (..)
 import Expect exposing (Expectation)
 import Parser exposing (run)
 import Test exposing (..)
-import TortoiseParser exposing (Token(..), tortoiseParser)
-import Utils.DeadEndRenderer exposing (deadEndsToString)
+import TortoiseParser exposing (tortoiseParser)
+import Utils.AST exposing (Token(..))
+import Utils.Stringifiers exposing (deadEndsToString)
 
 
 suite : Test
