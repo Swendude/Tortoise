@@ -1,10 +1,9 @@
 module ParserTests exposing (..)
 
 import Expect exposing (Expectation)
-import Parser exposing (run)
+import Parser.Advanced exposing (run)
 import Test exposing (..)
-import TortoiseParser exposing (tortoiseParser)
-import Utils.AST exposing (Token(..))
+import TortoiseParser exposing (TrtToken(..), tortoiseParser)
 import Utils.Stringifiers exposing (deadEndsToString)
 
 
@@ -29,14 +28,20 @@ suite =
             ]
         , describe "SCRIPTS"
             [ test "Parses script" <|
-                \_ -> testScript "FORWARD 10\nFORWARD 20" [ FORWARD 10, FORWARD 20 ]
+                \_ -> testScript "FORWARD 10\nLEFT 20" [ FORWARD 10, LEFT 20 ]
             , test "Parses script with whitespace " <|
                 \_ -> testScript "  FORWARD 10  \n FORWARD 20   \n\n LEFT 25 " [ FORWARD 10, FORWARD 20, LEFT 25 ]
+            , test "Fails on gibberish " <|
+                \_ -> Expect.err <| run tortoiseParser "lfi"
+            , test "Fails on unknown " <|
+                \_ -> Expect.err <| run tortoiseParser "FORWARD 10\nFORWARD 20\nLEFT 25\nblooob"
+            , test "Succeeds on trailing whitespace" <|
+                \_ -> testScript "  FORWARD 10\nFORWARD 20\nLEFT 25\n  " [ FORWARD 10, FORWARD 20, LEFT 25 ]
             ]
         ]
 
 
-testScript : String -> List Token -> Expectation
+testScript : String -> List TrtToken -> Expectation
 testScript inp exp =
     let
         parsed =

@@ -84,10 +84,16 @@ outputView maybeResult =
         Just result ->
             case result of
                 Ok res ->
-                    p [] [ text res ]
+                    div []
+                        [ p [] [ text "Succes" ]
+                        , p [] [ text res ]
+                        ]
 
                 Err err ->
-                    p [] [ text err ]
+                    div []
+                        [ p [] [ text "Error" ]
+                        , p [] [ text err ]
+                        ]
 
         Nothing ->
             p [] []
