@@ -35,8 +35,18 @@ suite =
                 \_ -> Expect.err <| run tortoiseParser "lfi"
             , test "Fails on unknown " <|
                 \_ -> Expect.err <| run tortoiseParser "FORWARD 10\nFORWARD 20\nLEFT 25\nblooob"
-            , test "Succeeds on trailing whitespace" <|
+            , test "Fails on no newline " <|
+                \_ -> Expect.err <| run tortoiseParser "FORWARD 10 LEFT 25"
+            , test "Succeeds on trailing newline and whitespace" <|
                 \_ -> testScript "  FORWARD 10\nFORWARD 20\nLEFT 25\n  " [ FORWARD 10, FORWARD 20, LEFT 25 ]
+            , test "Succeeds on trailing newline" <|
+                \_ -> testScript "  FORWARD 10\nFORWARD 20\nLEFT 25\n" [ FORWARD 10, FORWARD 20, LEFT 25 ]
+            , test "Succeeds on trailing whitespace" <|
+                \_ -> testScript "  FORWARD 10\nFORWARD 20\nLEFT 25  " [ FORWARD 10, FORWARD 20, LEFT 25 ]
+            , test "Succeeds on newline script" <|
+                \_ -> testScript "\n  \n   " []
+            , test "Succeeds on space script" <|
+                \_ -> testScript "   " []
             ]
         ]
 
@@ -52,4 +62,4 @@ testScript inp exp =
             Expect.equal result exp
 
         Err des ->
-            Expect.fail <| deadEndsToString des
+            Expect.fail <| String.concat <| List.intersperse "\n" <| deadEndsToString des

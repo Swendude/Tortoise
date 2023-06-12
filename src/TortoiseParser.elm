@@ -1,6 +1,6 @@
 module TortoiseParser exposing (TrtDeadend, TrtToken(..), parse, problemToString, tortoiseParser)
 
-import Parser.Advanced exposing ((|.), (|=), DeadEnd, Step(..), Token(..), Trailing(..), chompIf, chompWhile, end, int, keyword, loop, map, oneOf, run, succeed, token)
+import Parser.Advanced exposing ((|.), (|=), DeadEnd, Step(..), Token(..), Trailing(..), backtrackable, chompIf, chompWhile, end, int, keyword, loop, map, oneOf, run, succeed, token)
 import String exposing (fromInt)
 
 
@@ -30,9 +30,7 @@ type TrtContext
 
 
 type TrtProblem
-    = TrtProblem
-    | CommandExpected Int
-    | BadWhiteSpace
+    = CommandExpected Int
     | NumberExpected
     | NumberInvalid
     | NewLineExpected
@@ -42,6 +40,15 @@ type TrtProblem
 problemToString : TrtProblem -> String
 problemToString pr =
     case pr of
+        NumberExpected ->
+            "Expected number"
+
+        NumberInvalid ->
+            "Expected a round number"
+
+        EndExpected ->
+            "Expected end of script"
+
         NewLineExpected ->
             "Expected a newline"
 
@@ -55,9 +62,6 @@ problemToString pr =
 
                 m ->
                     "Expected a command with " ++ fromInt m ++ " arguments"
-
-        _ ->
-            "UNKNOWN PROBLEM"
 
 
 type alias TrtParser target =
@@ -76,27 +80,31 @@ statements =
 
 
 statementsHelp revStmts =
-    oneOf
-        [ succeed (\stmt -> Loop (stmt :: revStmts))
-            |. multipleSpaces
-            |= oneOf
-                [ singleArgCommand "FORWARD" FORWARD
-                , singleArgCommand "LEFT" LEFT
-                , singleArgCommand "RIGHT" RIGHT
-                , singleArgCommand "REPEAT" REPEAT_start
-                , noArgCommand "ENDREPEAT" REPEAT_end
-                , noArgCommand "PENUP" PENUP
-                , noArgCommand "PENDOWN" PENDOWN
-                ]
-            |. multipleSpaces
+    succeed identity
+        |. multipleSpaces
+        |= oneOf
+            [ backtrackable <|
+                succeed (\stmt -> Loop (stmt :: revStmts))
+                    |= oneOf
+                        [ singleArgCommand "FORWARD" FORWARD
+                        , singleArgCommand "LEFT" LEFT
+                        , singleArgCommand "RIGHT" RIGHT
+                        , singleArgCommand "REPEAT" REPEAT_start
+                        , noArgCommand "ENDREPEAT" REPEAT_end
+                        , noArgCommand "PENUP" PENUP
+                        , noArgCommand "PENDOWN" PENDOWN
+                        ]
+                    |. multipleSpaces
+                    |. oneOf [ newLine, end EndExpected ]
 
-        -- allow empty lines
-        , succeed (Loop revStmts)
-            |. multipleSpaces
-            |. newLine
-            |. multipleSpaces
-        , succeed (Done (List.reverse revStmts)) |. end EndExpected
-        ]
+            -- allow empty lines
+            , backtrackable <|
+                succeed (Loop revStmts)
+                    |. newLine
+                    |. multipleSpaces
+            , succeed (Done (List.reverse revStmts))
+                |. end EndExpected
+            ]
 
 
 multipleSpaces : TrtParser ()

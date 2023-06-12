@@ -1,8 +1,14 @@
 {
   "devDependencies": {
-    "elm-test": "^0.19.1-revision12"
+    "elm-test": "^0.19.1-revision12",
+    "nodemon": "^2.0.22"
+  },
+  "nodemonConfig": {
+    "execMap": {
+      "elm": "elm make"}
   },
   "scripts": {
-    "test": "elm-test"
+    "test": "elm-test",
+    "build": "nodemon src/Main.elm --output=dist/main.js"
   }
 }

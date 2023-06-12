@@ -5,7 +5,7 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick, onInput)
 import TortoiseParser exposing (parse)
-import Utils.Stringifiers exposing (tokensToString)
+import Utils.Stringifiers exposing (deadEndsToString, tokensToString)
 
 
 main =
@@ -27,7 +27,7 @@ subscriptions model =
 
 type alias Model =
     { code : String
-    , result : Maybe (Result String String)
+    , result : Maybe (Result (List String) String)
     }
 
 
@@ -56,7 +56,15 @@ update msg model =
             ( { model | code = s }, Cmd.none )
 
         ParseCode ->
-            ( { model | result = Just <| Result.map tokensToString (parse model.code) }, Cmd.none )
+            ( { model
+                | result =
+                    Just <|
+                        Result.mapError deadEndsToString <|
+                            Result.map tokensToString <|
+                                parse model.code
+              }
+            , Cmd.none
+            )
 
 
 
@@ -65,12 +73,11 @@ update msg model =
 
 view : Model -> Html Msg
 view model =
-    div []
+    div [ class "container" ]
         [ textarea
             [ onInput UpdateCode
             , value model.code
-            , rows 20
-            , cols 60
+            , spellcheck False
             ]
             []
         , button [ onClick ParseCode ] [ text "parse" ]
@@ -78,7 +85,7 @@ view model =
         ]
 
 
-outputView : Maybe (Result String String) -> Html Msg
+outputView : Maybe (Result (List String) String) -> Html Msg
 outputView maybeResult =
     case maybeResult of
         Just result ->
@@ -89,11 +96,13 @@ outputView maybeResult =
                         , p [] [ text res ]
                         ]
 
-                Err err ->
-                    div []
-                        [ p [] [ text "Error" ]
-                        , p [] [ text err ]
-                        ]
+                Err errs ->
+                    div [ class "errors" ] <| List.map error errs
 
         Nothing ->
             p [] []
+
+
+error : String -> Html Msg
+error err =
+    p [ class "error" ] [ text err ]

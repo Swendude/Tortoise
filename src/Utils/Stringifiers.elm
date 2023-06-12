@@ -34,9 +34,9 @@ tokenToString t =
             "FORWARD " ++ fromInt n
 
 
-deadEndsToString : List TrtDeadend -> String
+deadEndsToString : List TrtDeadend -> List String
 deadEndsToString deadEnds =
-    String.concat (List.intersperse "; " (List.map deadEndToString deadEnds))
+    List.map deadEndToString deadEnds
 
 
 deadEndToString : TrtDeadend -> String
